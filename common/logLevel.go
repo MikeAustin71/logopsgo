@@ -8,16 +8,16 @@ func (level LogLevel) String() string {
 }
 
 const (
-	// DEBUG - message
-	DEBUG LogLevel = iota
-	// OPERROR - 1 Message is an Error Message
-	OPERROR
-	// FATAL - 2 Message is a Fatal Error Message
-	FATAL
-	// INFO - 3 Message is an Informational Message
-	INFO
-	// WARN - 4 Message is a warning Message
-	WARN
+	// LogDEBUG - message
+	LogDEBUG LogLevel = iota
+	// LogOPERROR - 1 Message is an Error Message
+	LogOPERROR
+	// LogFATAL - 2 Message is a Fatal Error Message
+	LogFATAL
+	// LogINFO - 3 Message is an Informational Message
+	LogINFO
+	// LogWARN - 4 Message is a warning Message
+	LogWARN
 )
 
 // LogLevelNames - string array containing names of Log Levels

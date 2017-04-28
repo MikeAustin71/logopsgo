@@ -5,7 +5,7 @@ import "testing"
 func TestLogLevelString(t *testing.T) {
 	var r LogLevel
 
-	r = OPERROR
+	r = LogOPERROR
 
 	var s string
 
@@ -22,7 +22,9 @@ func TestLogLevelValue(t *testing.T) {
 
 	var i int
 
-	r = INFO
+	r = LogINFO
+
+	i = int(r)
 
 	if r != 3 {
 		t.Error("Expected INFO value 3, got", i)
