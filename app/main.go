@@ -8,14 +8,17 @@ import (
 
 func main() {
 
-	var log common.LogJobGroupConfig
+	ini2()
 
-	lg := log.NewLogGroupConfig(time.Now().Local())
+}
 
-	fmt.Println("AppLogPathFileName", lg.AppLogPathFileName)
+func ini2() {
+	log := common.LogJobGroupConfig{}
+	log.NewLogGroupConfig(time.Now().Local())
 
-	fmt.Println("AppExeDir", lg.AppExeDir)
+	fmt.Println("AppLogPathFileName", log.AppLogPathFileName)
 
-	fmt.Println("AppLogBanner1", lg.AppLogBanner1)
+	fmt.Println("AppExeDir", log.AppExeDir)
 
+	fmt.Println("AppLogBanner1", log.AppLogBanner1)
 }

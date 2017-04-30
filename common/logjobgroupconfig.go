@@ -1,9 +1,7 @@
 package common
 
 import (
-	"os"
-	"path"
-	"path/filepath"
+	fp "path/filepath"
 	"strings"
 	"time"
 )
@@ -14,6 +12,7 @@ type LogJobGroupConfig struct {
 	LogMode            LoggingMode
 	StartTime          time.Time
 	EndTime            time.Time
+	Duration           time.Time
 	AppLogFileName     string
 	AppLogDir          string
 	AppLogPathFileName string
@@ -27,28 +26,40 @@ type LogJobGroupConfig struct {
 
 // NewLogGroupConfig - Initializes key
 // elements of a Logging Configuration
-func (logCfg LogJobGroupConfig) NewLogGroupConfig(t time.Time) *LogJobGroupConfig {
+func (logCfg *LogJobGroupConfig) NewLogGroupConfig(t time.Time) {
 
 	var err error
 	logCfg.LogMode = LogVERBOSE
 	logCfg.StartTime = t
 	logCfg.AppLogFileName = "CmdrX" + "_" + GetDateTimeStr(logCfg.StartTime) + ".log"
-	logCfg.AppLogDir, err = filepath.Abs("./")
+	logCfg.AppLogDir, err = MakeAbsolutePath("./")
 	if err != nil {
 		panic(err)
 	}
 
-	logCfg.AppLogPathFileName = logCfg.AppLogDir + logCfg.AppLogFileName
+	logCfg.AppLogPathFileName = fp.Join(logCfg.AppLogDir, logCfg.AppLogFileName)
 	logCfg.AppLogBanner1 = strings.Repeat("=", 79)
 	logCfg.AppLogBanner2 = strings.Repeat("#", 79)
 	logCfg.AppLogBanner3 = strings.Repeat("*", 79)
 	logCfg.AppLogBanner4 = strings.Repeat("-", 79)
-	ex, err2 := os.Executable()
+
+	logCfg.AppExeDir = getExeDir()
+
+}
+
+func getExeDir() string {
+
+	ex, err1 := GetExecutablePathFileName()
+
+	if err1 != nil {
+		panic(err1)
+	}
+
+	p, err2 := GetAbsPathFromFilePath(ex)
+
 	if err2 != nil {
 		panic(err2)
 	}
 
-	logCfg.AppExeDir = path.Dir(ex)
-
-	return &logCfg
+	return p
 }
