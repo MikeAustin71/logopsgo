@@ -6,6 +6,34 @@ import (
 	fp "path/filepath"
 )
 
+// ChangeDir - Chdir changes the current working directory to the named directory. If there is an error, it will be of type *PathError.
+func ChangeDir(dirPath string) (bool, error) {
+
+	err := os.Chdir(dirPath)
+
+	if err != nil {
+		return false, err
+	}
+
+	return true, nil
+}
+
+// DeleteDirFile - Wrapper function for Remove.
+// Remove removes the named file or directory.
+// If there is an error, it will be of type *PathError.
+func DeleteDirFile(pathFile string) error {
+	return os.Remove(pathFile)
+}
+
+// DeleteDirPathAll - Wrapper function for RemoveAll
+// RemoveAll removes path and any children it contains.
+// It removes everything it can but returns the first
+// error it encounters. If the path does not exist,
+// RemoveAll returns nil (no error).
+func DeleteDirPathAll(path string) error {
+	return os.RemoveAll(path)
+}
+
 // DoesFileExist - Returns a boolean value
 // designating whether the passed file name
 // exists.
@@ -64,18 +92,6 @@ func MakeAbsolutePath(relPath string) (string, error) {
 	return path, err
 }
 
-// ChangeDir - Chdir changes the current working directory to the named directory. If there is an error, it will be of type *PathError.
-func ChangeDir(dirPath string) (bool, error) {
-
-	err := os.Chdir(dirPath)
-
-	if err != nil {
-		return false, err
-	}
-
-	return true, nil
-}
-
 // MakeDirAll - creates a directory named path,
 // along with any necessary parents, and returns nil,
 // or else returns an error. The permission bits perm
@@ -95,7 +111,7 @@ func MakeDirAll(dirPath string) (bool, error) {
 }
 
 // MakeDir - Makes a directory. Returns
-// boolean value of flase plus error if
+// boolean value of false plus error if
 // the operation fails. If successful,
 // the function returns true.
 func MakeDir(dirPath string) (bool, error) {
