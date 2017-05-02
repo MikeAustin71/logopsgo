@@ -6,16 +6,28 @@ import (
 	fp "path/filepath"
 )
 
+// AdjustPathSlash standardize path
+// separators according to operating system
+func AdjustPathSlash(path string) string {
+
+	return fp.FromSlash(path)
+}
+
 // ChangeDir - Chdir changes the current working directory to the named directory. If there is an error, it will be of type *PathError.
-func ChangeDir(dirPath string) (bool, error) {
+func ChangeDir(dirPath string) error {
 
 	err := os.Chdir(dirPath)
 
 	if err != nil {
-		return false, err
+		return err
 	}
 
-	return true, nil
+	return nil
+}
+
+// CreateFile - Wrapper function for os.Create
+func CreateFile(fileName string) (*os.File, error) {
+	return os.Create(fileName)
 }
 
 // DeleteDirFile - Wrapper function for Remove.
@@ -69,6 +81,30 @@ func GetAbsPathFromFilePath(filePath string) (string, error) {
 
 }
 
+// GetAbsCurrDir() - returns
+// the absolute path of the
+// current working directory
+func GetAbsCurrDir() (string, error) {
+
+	dir, err := GetCurrentDir()
+
+	if err != nil {
+		return dir, err
+	}
+
+	return MakeAbsolutePath(dir)
+}
+
+// GetCurrentDir - Wrapper function for
+// Getwd(). Getwd returns a rooted path name
+// corresponding to the current directory.
+// If the current directory can be reached via
+// multiple paths (due to symbolic links),
+// Getwd may return any one of them.
+func GetCurrentDir() (string, error) {
+	return os.Getwd()
+}
+
 // GetExecutablePathFileName - Gets the file name
 // and path of the executable that started the
 // current process
@@ -76,6 +112,23 @@ func GetExecutablePathFileName() (string, error) {
 	ex, err := os.Executable()
 
 	return ex, err
+
+}
+
+// JoinPathsAdjustSeparators - Joins two
+// path strings and standardizes the
+// path separators according to the
+// current operating system.
+func JoinPathsAdjustSeparators(p1 string, p2 string) string {
+
+	return fp.FromSlash(JoinPaths(p1, p2))
+
+}
+
+// JoinPaths - correctly joins 2-paths
+func JoinPaths(p1 string, p2 string) string {
+
+	return path.Join(p1, p2)
 
 }
 
@@ -98,16 +151,9 @@ func MakeAbsolutePath(relPath string) (string, error) {
 // are used for all directories that MkdirAll creates.
 // If path is already a directory, MkdirAll does nothing
 // and returns nil.
-func MakeDirAll(dirPath string) (bool, error) {
+func MakeDirAll(dirPath string) error {
 	var ModePerm os.FileMode = 0777
-	err := os.MkdirAll(dirPath, ModePerm)
-
-	if err != nil {
-		return false, err
-	}
-
-	return true, nil
-
+	return os.MkdirAll(dirPath, ModePerm)
 }
 
 // MakeDir - Makes a directory. Returns
