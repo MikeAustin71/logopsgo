@@ -32,6 +32,12 @@ func (s SpecErr) New(prefix string, err error, isPanic bool, srcFile string, fun
 	return x
 }
 
+// SetNoError - Returns a SpecErr
+// structure with IsErr set to false.
+func (s SpecErr) SetNoError() SpecErr {
+	return SpecErr {IsErr: false, IsPanic: false}
+}
+
 // Panic - Executes 'panic' command
 // if IsPanic == 'true'
 func (s SpecErr) Panic() {
@@ -68,6 +74,19 @@ func CheckErrPanic(e error) {
 	if e != nil {
 		panic(e)
 	}
+}
+
+// CheckIsSpecErr - If error is present,
+// returns 'true'.  If NO Error, returns
+// 'false'.
+func CheckIsSpecErr(eSpec SpecErr) bool {
+
+	if eSpec.IsErr {
+		return true
+	}
+
+	return false
+
 }
 
 // CheckSpecErrPanic - Issues a 'panic'
