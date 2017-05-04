@@ -1,7 +1,6 @@
 package common
 
 import (
-	"MikeAustin71/logopsgo/common"
 	"testing"
 	"time"
 )
@@ -13,7 +12,7 @@ func TestGetDateTimeStr(t *testing.T) {
 
 	testTime, _ := time.Parse(fmtstr, tstr)
 
-	result := common.GetDateTimeStr(testTime)
+	result := GetDateTimeStr(testTime)
 
 	if result != expected {
 		t.Error("Expected '20170429195430' got", result)

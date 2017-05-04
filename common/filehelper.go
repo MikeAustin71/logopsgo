@@ -81,7 +81,7 @@ func GetAbsPathFromFilePath(filePath string) (string, error) {
 
 }
 
-// GetAbsCurrDir() - returns
+// GetAbsCurrDir - returns
 // the absolute path of the
 // current working directory
 func GetAbsCurrDir() (string, error) {

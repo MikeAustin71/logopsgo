@@ -4,7 +4,7 @@ package common
 // containing information about an
 // operations message
 type OpsMsgDto struct {
-	message  string
+	message  []string
 	msgType  LogMsgType
 	msgLevel LogLevel
 }
