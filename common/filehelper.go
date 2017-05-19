@@ -6,15 +6,20 @@ import (
 	fp "path/filepath"
 )
 
+type FileHelper struct {
+	Path     string
+	FileName string
+}
+
 // AdjustPathSlash standardize path
 // separators according to operating system
-func AdjustPathSlash(path string) string {
+func (fh FileHelper) AdjustPathSlash(path string) string {
 
 	return fp.FromSlash(path)
 }
 
 // ChangeDir - Chdir changes the current working directory to the named directory. If there is an error, it will be of type *PathError.
-func ChangeDir(dirPath string) error {
+func (fh FileHelper) ChangeDir(dirPath string) error {
 
 	err := os.Chdir(dirPath)
 
@@ -26,14 +31,14 @@ func ChangeDir(dirPath string) error {
 }
 
 // CreateFile - Wrapper function for os.Create
-func CreateFile(fileName string) (*os.File, error) {
+func (fh FileHelper) CreateFile(fileName string) (*os.File, error) {
 	return os.Create(fileName)
 }
 
 // DeleteDirFile - Wrapper function for Remove.
 // Remove removes the named file or directory.
 // If there is an error, it will be of type *PathError.
-func DeleteDirFile(pathFile string) error {
+func (fh FileHelper) DeleteDirFile(pathFile string) error {
 	return os.Remove(pathFile)
 }
 
@@ -42,16 +47,16 @@ func DeleteDirFile(pathFile string) error {
 // It removes everything it can but returns the first
 // error it encounters. If the path does not exist,
 // RemoveAll returns nil (no error).
-func DeleteDirPathAll(path string) error {
+func (fh FileHelper) DeleteDirPathAll(path string) error {
 	return os.RemoveAll(path)
 }
 
 // DoesFileExist - Returns a boolean value
 // designating whether the passed file name
 // exists.
-func DoesFileExist(pathFileName string) bool {
+func (fh FileHelper) DoesFileExist(pathFileName string) bool {
 
-	status, _, _ := DoesFileInfoExist(pathFileName)
+	status, _, _ := fh.DoesFileInfoExist(pathFileName)
 
 	return status
 }
@@ -60,7 +65,7 @@ func DoesFileExist(pathFileName string) bool {
 // whether the path and file name passed to the function
 // actually exists. Note: If the file actually exists,
 // the function will return the associated FileInfo structure.
-func DoesFileInfoExist(pathFileName string) (bool, os.FileInfo, error) {
+func (fh FileHelper) DoesFileInfoExist(pathFileName string) (bool, os.FileInfo, error) {
 	var fInfo os.FileInfo
 	var err error
 
@@ -75,24 +80,24 @@ func DoesFileInfoExist(pathFileName string) (bool, os.FileInfo, error) {
 // GetAbsPathFromFilePath - Supply a string containing both
 // the path file name and extension and return the path
 // element.
-func GetAbsPathFromFilePath(filePath string) (string, error) {
+func (fh FileHelper) GetAbsPathFromFilePath(filePath string) (string, error) {
 
-	return MakeAbsolutePath(path.Dir(filePath))
+	return fh.MakeAbsolutePath(path.Dir(filePath))
 
 }
 
 // GetAbsCurrDir - returns
 // the absolute path of the
 // current working directory
-func GetAbsCurrDir() (string, error) {
+func (fh FileHelper) GetAbsCurrDir() (string, error) {
 
-	dir, err := GetCurrentDir()
+	dir, err := fh.GetCurrentDir()
 
 	if err != nil {
 		return dir, err
 	}
 
-	return MakeAbsolutePath(dir)
+	return fh.MakeAbsolutePath(dir)
 }
 
 // GetCurrentDir - Wrapper function for
@@ -101,14 +106,14 @@ func GetAbsCurrDir() (string, error) {
 // If the current directory can be reached via
 // multiple paths (due to symbolic links),
 // Getwd may return any one of them.
-func GetCurrentDir() (string, error) {
+func (fh FileHelper) GetCurrentDir() (string, error) {
 	return os.Getwd()
 }
 
 // GetExecutablePathFileName - Gets the file name
 // and path of the executable that started the
 // current process
-func GetExecutablePathFileName() (string, error) {
+func (fh FileHelper) GetExecutablePathFileName() (string, error) {
 	ex, err := os.Executable()
 
 	return ex, err
@@ -119,14 +124,14 @@ func GetExecutablePathFileName() (string, error) {
 // path strings and standardizes the
 // path separators according to the
 // current operating system.
-func JoinPathsAdjustSeparators(p1 string, p2 string) string {
+func (fh FileHelper) JoinPathsAdjustSeparators(p1 string, p2 string) string {
 
-	return fp.FromSlash(JoinPaths(p1, p2))
+	return fp.FromSlash(fh.JoinPaths(p1, p2))
 
 }
 
 // JoinPaths - correctly joins 2-paths
-func JoinPaths(p1 string, p2 string) string {
+func (fh FileHelper) JoinPaths(p1 string, p2 string) string {
 
 	return path.Join(p1, p2)
 
@@ -134,15 +139,15 @@ func JoinPaths(p1 string, p2 string) string {
 
 // MakeAbsolutePath - Supply a relative path or any path
 // string and resolve that path to an Absolute Path.
-func MakeAbsolutePath(relPath string) (string, error) {
+func (fh FileHelper) MakeAbsolutePath(relPath string) (string, error) {
 
-	path, err := fp.Abs(relPath)
+	p, err := fp.Abs(relPath)
 
 	if err != nil {
-		return "Invalid Path!", err
+		return "Invalid p!", err
 	}
 
-	return path, err
+	return p, err
 }
 
 // MakeDirAll - creates a directory named path,
@@ -151,7 +156,7 @@ func MakeAbsolutePath(relPath string) (string, error) {
 // are used for all directories that MkdirAll creates.
 // If path is already a directory, MkdirAll does nothing
 // and returns nil.
-func MakeDirAll(dirPath string) error {
+func (fh FileHelper) MakeDirAll(dirPath string) error {
 	var ModePerm os.FileMode = 0777
 	return os.MkdirAll(dirPath, ModePerm)
 }
@@ -160,7 +165,7 @@ func MakeDirAll(dirPath string) error {
 // boolean value of false plus error if
 // the operation fails. If successful,
 // the function returns true.
-func MakeDir(dirPath string) (bool, error) {
+func (fh FileHelper) MakeDir(dirPath string) (bool, error) {
 	var ModePerm os.FileMode = 0777
 	err := os.Mkdir(dirPath, ModePerm)
 
