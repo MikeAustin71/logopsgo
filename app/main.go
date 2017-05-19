@@ -1,14 +1,14 @@
 package main
 
 import (
-	common "MikeAustin71/logopsgo/common"
+	"MikeAustin71/logopsgo/common"
 	"fmt"
 	"time"
 )
 
 const (
-	mainSrcFileName = "main.go"
-	mainErrBlockNo = int64(1000)
+	thisSrcFileName = "main.go"
+	thisErrBlockNo  = int64(1000)
 )
 func main() {
 
@@ -17,10 +17,10 @@ func main() {
 }
 
 func ini2() {
-		parent := common.ErrBaseInfo{}.GetNewParentInfo(mainSrcFileName, "ini2", mainErrBlockNo )
+		parent := common.ErrBaseInfo{}.GetNewParentInfo(thisSrcFileName, "ini2", thisErrBlockNo)
 
 	log := common.LogJobGroupConfig{}
-	sErr := log.NewLogGroupConfig(time.Now().Local(), parent)
+	sErr := log.NewLogGroupConfig("CmdrX Ver 2.0", "CmdrX.xml",time.Now(), parent)
 
 	if common.CheckIsSpecErr(sErr){
 		fmt.Println(sErr.Error())
@@ -29,5 +29,5 @@ func ini2() {
 
 	fmt.Println("AppLogPathFileName", log.AppLogPathFileName)
 
-	fmt.Println("AppLogBanner1", log.AppLogBanner1)
+	fmt.Println("AppLogBanner1", log.Banner1)
 }
