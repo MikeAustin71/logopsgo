@@ -175,3 +175,13 @@ func (fh FileHelper) MakeDir(dirPath string) (bool, error) {
 
 	return true, nil
 }
+
+
+// OpenFile - Wrapper function for os.Open() method which opens
+// files on disk. Open opens the named file for reading.
+// If successful, methods on the returned file can be used for reading;
+// the associated file descriptor has mode O_RDONLY. If there is an error,
+// it will be of type *PathError. (See CreateFile() above.
+func (fh FileHelper) OpenFile(fileName string) (*os.File, error) {
+	return os.Open(fileName)
+}

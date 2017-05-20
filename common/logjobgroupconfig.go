@@ -17,6 +17,20 @@ const (
 	LogGroupConfigErrBlockNo = int64(647000000)
 )
 
+// LogStartupParameters - This data structure is
+// used by the calling method to initialize a
+// LogJobGroupConfig using the 'New(...)' method.
+type LogStartupParameters struct {
+	AppName         string
+	AppExeFileName  string
+	AppVersion      string
+	CommandFileName string
+	StartTime       time.Time
+	AppLogDir       string
+	NoOfJobs        int
+	LogMode         LoggingMode
+}
+
 // LogJobGroupConfig - holds logging configuration for the
 // current group of jobs
 type LogJobGroupConfig struct {
@@ -25,7 +39,9 @@ type LogJobGroupConfig struct {
 	EndTime            time.Time
 	Duration           time.Time
 	CommandFileName    string
-	AppNameVersion     string
+	AppName            string
+	AppExeFileName     string
+	AppVersion         string
 	AppLogFileName     string
 	AppLogDir          string
 	AppLogPathFileName string
@@ -35,29 +51,38 @@ type LogJobGroupConfig struct {
 	Banner3            string
 	Banner4            string
 	BannerLen          int
+	LeftTab            string
 	BaseStartDir       string
 	AppNoOfJobs        int
+	NoOfMessagesLogged int
+	NoOfJobsCompleted  int
 }
 
-// NewLogGroupConfig - Initializes key
+// New - Initializes key
 // elements of a Logging Configuration
-func (logCfg *LogJobGroupConfig) NewLogGroupConfig(appNameVer string, commandFileName string, t time.Time, parent []ErrBaseInfo) SpecErr {
+func (logCfg *LogJobGroupConfig) New(startParams LogStartupParameters,
+	parent []ErrBaseInfo) SpecErr {
+
 	var err error
 	var isPanic bool
-	se := logCfg.BaseLogErrConfig(parent, "NewLogGroupConfig()")
+	se := logCfg.BaseLogErrConfig(parent, "New()")
 
-	logCfg.LogMode = LogVERBOSE
-	logCfg.StartTime = t
-	logCfg.CommandFileName = commandFileName
-	logCfg.AppNameVersion = appNameVer
+	logCfg.LogMode = startParams.LogMode
+	logCfg.StartTime = startParams.StartTime
+	logCfg.CommandFileName = startParams.CommandFileName
+	logCfg.AppName = startParams.AppName
+	logCfg.AppExeFileName = startParams.AppExeFileName
+	logCfg.AppVersion = startParams.AppVersion
+	logCfg.AppNoOfJobs = startParams.NoOfJobs
+
 	dt := DateTimeUtility{}
-	logCfg.AppLogFileName = "CmdrX" + "_" + dt.GetDateTimeStr(logCfg.StartTime) + ".log"
+	logCfg.AppLogFileName = logCfg.AppName + "_" + dt.GetDateTimeStr(logCfg.StartTime) + ".log"
 
 	fh := FileHelper{}
-	logCfg.AppLogDir, err = fh.MakeAbsolutePath("./CmdrX")
+	logCfg.AppLogDir, err = fh.MakeAbsolutePath(startParams.AppLogDir)
 
 	if err != nil {
-		s := "MakeAbsolutePath Failed for './CmdrX'"
+		s := fmt.Sprintf("MakeAbsolutePath Failed for AppLogDir '%v'", startParams.AppLogDir)
 		isPanic = true
 		return se.New(s, err, isPanic, 101)
 	}
@@ -74,6 +99,8 @@ func (logCfg *LogJobGroupConfig) NewLogGroupConfig(appNameVer string, commandFil
 
 	logCfg.Banner4 = strings.Repeat("-", logCfg.BannerLen) + "\n"
 
+	logCfg.LeftTab = strings.Repeat(" ", 2)
+
 	logCfg.BaseStartDir, err = fh.GetAbsCurrDir()
 
 	if err != nil {
@@ -86,8 +113,9 @@ func (logCfg *LogJobGroupConfig) NewLogGroupConfig(appNameVer string, commandFil
 	return SpecErr{}.SignalNoErrors()
 }
 
-// InitializeLogFile - Initializes the log directory and
-// a new log file.
+// InitializeLogFile - Creates the log directory and
+// a new log file. Opens the Log File. New(..) MUST
+// be called before this method!
 func (logCfg *LogJobGroupConfig) InitializeLogFile(parent []ErrBaseInfo) SpecErr {
 
 	var err error
@@ -137,14 +165,16 @@ func (logCfg *LogJobGroupConfig) InitializeLogFile(parent []ErrBaseInfo) SpecErr
 
 // WriteFileGroupHeaderToLog - Writes the Job Group
 // Header info to the log file. This is a one-time
-// operation for each log file. BE SURE that
-// logCfg.AppNoOfJobs is previously initialized!
-func (logCfg *LogJobGroupConfig) WriteFileGroupHeaderToLog(parent []ErrBaseInfo, exeVersionNo string) SpecErr {
+// operation for each log file. Method InitializeLogFile(..)
+// MUST be called before first use of this method.
+func (logCfg *LogJobGroupConfig) WriteFileGroupHeaderToLog(parent []ErrBaseInfo) SpecErr {
 	var err error
 	var isPanic bool
 	var str, stx string
 
 	se := logCfg.BaseLogErrConfig(parent, "WriteFileGroupHeaderToLog()")
+
+	thisParentInfo := se.AddBaseToParentInfo()
 
 	if logCfg.FilePtr == nil {
 		s := "logCfg.FilePtr was not correctly initialized! logCfg.FilePtr *os.File pointer is nil!"
@@ -152,21 +182,22 @@ func (logCfg *LogJobGroupConfig) WriteFileGroupHeaderToLog(parent []ErrBaseInfo,
 		return se.New(s, err, isPanic, 301)
 	}
 
-	logCfg.FilePtr.WriteString(logCfg.Banner1)
-	logCfg.FilePtr.WriteString(logCfg.Banner1)
+	logCfg.WriteFileString(logCfg.Banner1, thisParentInfo)
+	logCfg.WriteFileString(logCfg.Banner1, thisParentInfo)
 
 	su := StringUtility{}
-
-	str, err = su.StrCenterInStr(logCfg.AppNameVersion, logCfg.BannerLen)
+	stx = fmt.Sprintf("App Name: %v  AppVersion: %v ", logCfg.AppName, logCfg.AppVersion)
+	str, err = su.StrCenterInStr(stx, logCfg.BannerLen)
 	if err != nil {
-		s := "StrCenterInStr through error on AppNameVersion"
+		s := "StrCenterInStr threw error on AppName AppVersion"
 		isPanic = true
 		return se.New(s, err, isPanic, 302)
 	}
 
-	logCfg.FilePtr.WriteString(str)
-	logCfg.FilePtr.WriteString(logCfg.Banner1)
-	str = fmt.Sprintf("Execution Job Group: %v Commands", logCfg.CommandFileName)
+	logCfg.WriteFileString(str, thisParentInfo)
+	logCfg.WriteFileString(logCfg.Banner1, thisParentInfo)
+
+	str = fmt.Sprintf("Execution Job Group Command File: %v", logCfg.CommandFileName)
 
 	stx, err = su.StrCenterInStr(str, logCfg.BannerLen)
 	if err != nil {
@@ -175,7 +206,7 @@ func (logCfg *LogJobGroupConfig) WriteFileGroupHeaderToLog(parent []ErrBaseInfo,
 		return se.New(s, err, isPanic, 303)
 	}
 
-	logCfg.FilePtr.WriteString(stx)
+	logCfg.WriteFileString(stx, thisParentInfo)
 
 	str = fmt.Sprintf("Starting Execution of %v Jobs.", logCfg.AppNoOfJobs)
 
@@ -186,8 +217,120 @@ func (logCfg *LogJobGroupConfig) WriteFileGroupHeaderToLog(parent []ErrBaseInfo,
 		return se.New(s, err, isPanic, 304)
 	}
 
+	logCfg.WriteFileString(stx, thisParentInfo)
+
+	dt := DateTimeUtility{}
+
+	str = fmt.Sprintf("Job Execution Start Time: %v", dt.GetDateTimeEverything(logCfg.StartTime))
+
+	stx, err = su.StrCenterInStr(str, logCfg.BannerLen)
+	if err != nil {
+		s := "StrCenterInStr threw error on Number of Job Execution Start Time"
+		isPanic = true
+		return se.New(s, err, isPanic, 305)
+	}
+
+	logCfg.WriteFileString(stx, thisParentInfo)
+	logCfg.WriteFileString(logCfg.Banner1, thisParentInfo)
+	logCfg.WriteFileString(logCfg.Banner1, thisParentInfo)
+
 	// Signal Successful Completion
 	return SpecErr{}.SignalNoErrors()
+}
+
+func (logCfg *LogJobGroupConfig) WriteFileGroupFooterToLog(parent []ErrBaseInfo) SpecErr {
+
+	var err error
+	var isPanic bool
+	var str, stx string
+
+	se := logCfg.BaseLogErrConfig(parent, "WriteFileGroupFooterToLog()")
+
+	thisParentInfo := se.AddBaseToParentInfo()
+
+	if logCfg.FilePtr == nil {
+		s := "logCfg.FilePtr was not correctly initialized! logCfg.FilePtr *os.File pointer is nil!"
+		isPanic = true
+		return se.New(s, err, isPanic, 801)
+	}
+
+	logCfg.WriteFileString(logCfg.Banner1, thisParentInfo)
+	logCfg.WriteFileString(logCfg.Banner1, thisParentInfo)
+
+	su := StringUtility{}
+	str = fmt.Sprintf("App Name: %v  AppVersion: %v ", logCfg.AppName, logCfg.AppVersion)
+	stx, err = su.StrCenterInStr(stx, logCfg.BannerLen)
+	if err != nil {
+		s := "StrCenterInStr threw error on AppName AppVersion"
+		isPanic = true
+		return se.New(s, err, isPanic, 802)
+	}
+
+	logCfg.WriteFileString(stx, thisParentInfo)
+	logCfg.WriteFileString(logCfg.Banner1, thisParentInfo)
+
+	str = fmt.Sprintf("Execution Job Group Command File: %v", logCfg.CommandFileName)
+
+	stx, err = su.StrCenterInStr(str, logCfg.BannerLen)
+	if err != nil {
+		s := "StrCenterInStr threw error on Command File Name"
+		isPanic = true
+		return se.New(s, err, isPanic, 803)
+	}
+
+	logCfg.WriteFileString(stx, thisParentInfo)
+	logCfg.WriteFileString(logCfg.Banner1, thisParentInfo)
+
+	stx = logCfg.LeftTab + fmt.Sprintf("  Number of Jobs Executed: %v ", logCfg.NoOfJobsCompleted)
+
+	logCfg.WriteFileString(stx, thisParentInfo)
+
+	stx = logCfg.LeftTab + fmt.Sprintf("Number of Messages Logged: %v ", logCfg.NoOfMessagesLogged)
+
+	logCfg.WriteFileString(stx, thisParentInfo)
+
+	logCfg.WriteFileString(logCfg.Banner3, thisParentInfo)
+
+	dt := DateTimeUtility{}
+	str = dt.GetDateTimeNanoSecText(logCfg.StartTime)
+	stx = logCfg.LeftTab + fmt.Sprintf("JobGroup   Start Time: %v ", str)
+	logCfg.WriteFileString(stx, thisParentInfo)
+
+	str = dt.GetDateTimeNanoSecText(logCfg.EndTime)
+	stx = logCfg.LeftTab + fmt.Sprintf("JobGroup     End Time: %v ", str)
+	logCfg.WriteFileString(stx, thisParentInfo)
+
+	ed, err2 := dt.GetElapsedTime(logCfg.StartTime, logCfg.EndTime)
+
+	if err2 != nil {
+		s := fmt.Sprintf("DateTimeUtility:GetElapsedTime threw error on Start '%v' and End Time '%v'", logCfg.StartTime, logCfg.EndTime)
+		isPanic = true
+		return se.New(s, err, isPanic, 804)
+
+	}
+
+	stx = logCfg.LeftTab + fmt.Sprintf("JobGroup Elapsed Time: %v ", ed.NanosecStr)
+	logCfg.WriteFileString(stx, thisParentInfo)
+
+	logCfg.WriteFileString(logCfg.Banner1, thisParentInfo)
+	logCfg.WriteFileString(logCfg.Banner1, thisParentInfo)
+
+	// Signal Successful Completion
+	return SpecErr{}.SignalNoErrors()
+}
+
+func (logCfg *LogJobGroupConfig) WriteFileString(s string, parent []ErrBaseInfo) {
+
+	_, err := logCfg.FilePtr.WriteString(s)
+
+	if err != nil {
+		s := fmt.Sprintf("FilePtr.WriteString threw error on string: '%v'", s)
+		se :=
+			logCfg.BaseLogErrConfig(parent, "WriteFileString()").
+				New(s, err, true, 901)
+		panic(se)
+	}
+
 }
 
 // BaseLogErrConfig - Used internally by LogJobGroupConfig

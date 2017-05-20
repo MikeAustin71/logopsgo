@@ -10,6 +10,7 @@ const (
 	thisSrcFileName = "main.go"
 	thisErrBlockNo  = int64(1000)
 )
+
 func main() {
 
 	ini2()
@@ -17,17 +18,30 @@ func main() {
 }
 
 func ini2() {
-		parent := common.ErrBaseInfo{}.GetNewParentInfo(thisSrcFileName, "ini2", thisErrBlockNo)
 
-	log := common.LogJobGroupConfig{}
-	sErr := log.NewLogGroupConfig("CmdrX Ver 2.0", "CmdrX.xml",time.Now(), parent)
+	parms := common.LogStartupParameters{}
 
-	if common.CheckIsSpecErr(sErr){
-		fmt.Println(sErr.Error())
+	parms.StartTime = time.Now()
+	parms.AppVersion = "2.0.0"
+	parms.LogMode = common.LogVERBOSE
+	parms.AppLogDir = "./CmdrX"
+	parms.AppName = "CmdrX"
+	parms.AppExeFileName = "CmdrX.exe"
+	parms.NoOfJobs = 37
+	parms.CommandFileName = "CmdrX.xml"
+
+	parent := common.ErrBaseInfo{}.GetNewParentInfo(thisSrcFileName, "ini2", thisErrBlockNo)
+
+	lg := common.LogJobGroupConfig{}
+
+	se := lg.New(parms, parent)
+
+	if common.CheckIsSpecErr(se) {
+		fmt.Println(se.Error())
 		return
 	}
 
-	fmt.Println("AppLogPathFileName", log.AppLogPathFileName)
+	fmt.Println("AppLogPathFileName", lg.AppLogPathFileName)
 
-	fmt.Println("AppLogBanner1", log.Banner1)
+	fmt.Println("AppLogBanner1", lg.Banner1)
 }
