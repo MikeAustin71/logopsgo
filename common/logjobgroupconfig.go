@@ -21,41 +21,50 @@ const (
 // used by the calling method to initialize a
 // LogJobGroupConfig using the 'New(...)' method.
 type LogStartupParameters struct {
-	AppName         string
-	AppExeFileName  string
-	AppVersion      string
-	CommandFileName string
-	StartTime       time.Time
-	AppLogDir       string
-	NoOfJobs        int
-	LogMode         LoggingMode
+	AppName                 string
+	AppExeFileName          string
+	AppVersion              string
+	CommandFileName         string
+	StartTime               time.Time
+	AppLogPath              string
+	AppLogFileName          string
+	NoOfJobs                int
+	LogFileRetentionInDays  int
+	CmdExeDir               string
+	KillAllJobsOnFirstError bool
+	IanaTimeZone            string
+	LogMode                 LoggingMode
 }
 
 // LogJobGroupConfig - holds logging configuration for the
 // current group of jobs
 type LogJobGroupConfig struct {
-	LogMode            LoggingMode
-	StartTime          time.Time
-	EndTime            time.Time
-	Duration           time.Time
-	CommandFileName    string
-	AppName            string
-	AppExeFileName     string
-	AppVersion         string
-	AppLogFileName     string
-	AppLogDir          string
-	AppLogPathFileName string
-	FilePtr            *os.File
-	Banner1            string
-	Banner2            string
-	Banner3            string
-	Banner4            string
-	BannerLen          int
-	LeftTab            string
-	BaseStartDir       string
-	AppNoOfJobs        int
-	NoOfMessagesLogged int
-	NoOfJobsCompleted  int
+	LogMode                 LoggingMode
+	StartTime               time.Time
+	EndTime                 time.Time
+	Duration                time.Time
+	CommandFileName         string
+	AppName                 string
+	AppExeFileName          string
+	AppVersion              string
+	AppLogFileName          string
+	AppLogDir               string
+	AppLogPathFileName      string
+	FilePtr                 *os.File
+	Banner1                 string
+	Banner2                 string
+	Banner3                 string
+	Banner4                 string
+	BannerLen               int
+	LeftTab                 string
+	BaseStartDir            string
+	AppNoOfJobs             int
+	NoOfMessagesLogged      int
+	NoOfJobsCompleted       int
+	LogFileRetentionInDays  int
+	CmdExeDir               string
+	KillAllJobsOnFirstError bool
+	IanaTimeZone            string
 }
 
 // New - Initializes key
@@ -74,15 +83,19 @@ func (logCfg *LogJobGroupConfig) New(startParams LogStartupParameters,
 	logCfg.AppExeFileName = startParams.AppExeFileName
 	logCfg.AppVersion = startParams.AppVersion
 	logCfg.AppNoOfJobs = startParams.NoOfJobs
+	logCfg.LogFileRetentionInDays = startParams.LogFileRetentionInDays
+	logCfg.CmdExeDir = startParams.CmdExeDir
+	logCfg.KillAllJobsOnFirstError = startParams.KillAllJobsOnFirstError
+	logCfg.IanaTimeZone = startParams.IanaTimeZone
 
 	dt := DateTimeUtility{}
-	logCfg.AppLogFileName = logCfg.AppName + "_" + dt.GetDateTimeStr(logCfg.StartTime) + ".log"
+	logCfg.AppLogFileName = logCfg.AppLogFileName + "_" + dt.GetDateTimeStr(logCfg.StartTime) + ".log"
 
 	fh := FileHelper{}
-	logCfg.AppLogDir, err = fh.MakeAbsolutePath(startParams.AppLogDir)
+	logCfg.AppLogDir, err = fh.MakeAbsolutePath(startParams.AppLogPath)
 
 	if err != nil {
-		s := fmt.Sprintf("MakeAbsolutePath Failed for AppLogDir '%v'", startParams.AppLogDir)
+		s := fmt.Sprintf("MakeAbsolutePath Failed for AppLogPath '%v'", startParams.AppLogPath)
 		isPanic = true
 		return se.New(s, err, isPanic, 101)
 	}
@@ -136,7 +149,7 @@ func (logCfg *LogJobGroupConfig) InitializeLogFile(parent []ErrBaseInfo) SpecErr
 
 	}
 
-	// At this point, logCfg.AppLogDir exists.
+	// At this point, logCfg.AppLogPath exists.
 	// Check to determine if the log file exists.
 	// If log file already exists, delete it.
 	if fh.DoesFileExist(logCfg.AppLogPathFileName) {
@@ -292,6 +305,7 @@ func (logCfg *LogJobGroupConfig) WriteFileGroupFooterToLog(parent []ErrBaseInfo)
 	logCfg.WriteFileString(logCfg.Banner3, thisParentInfo)
 
 	dt := DateTimeUtility{}
+	dur := DurationUtility{}
 	str = dt.GetDateTimeNanoSecText(logCfg.StartTime)
 	stx = logCfg.LeftTab + fmt.Sprintf("JobGroup   Start Time: %v ", str)
 	logCfg.WriteFileString(stx, thisParentInfo)
@@ -300,7 +314,7 @@ func (logCfg *LogJobGroupConfig) WriteFileGroupFooterToLog(parent []ErrBaseInfo)
 	stx = logCfg.LeftTab + fmt.Sprintf("JobGroup     End Time: %v ", str)
 	logCfg.WriteFileString(stx, thisParentInfo)
 
-	ed, err2 := dt.GetElapsedTime(logCfg.StartTime, logCfg.EndTime)
+	ed, err2 := dur.GetElapsedTime(logCfg.StartTime, logCfg.EndTime)
 
 	if err2 != nil {
 		s := fmt.Sprintf("DateTimeUtility:GetElapsedTime threw error on Start '%v' and End Time '%v'", logCfg.StartTime, logCfg.EndTime)

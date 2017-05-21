@@ -8,9 +8,13 @@ import "time"
 type CommandJobGroup struct {
 	CmdFileVersion          string
 	DefaultCmdExeDir        string
+	LogPath									string
+	LogFileName							string
 	LogPathFileName					string
 	LogFileRetention        time.Duration
 	KillAllJobsOnFirstError bool
+	IanaTimeZone						string
+	NoOfCmdJobs							int
 }
 
 // CommandJobInfo - Contains information on

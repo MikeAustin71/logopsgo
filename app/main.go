@@ -24,7 +24,7 @@ func ini2() {
 	parms.StartTime = time.Now()
 	parms.AppVersion = "2.0.0"
 	parms.LogMode = common.LogVERBOSE
-	parms.AppLogDir = "./CmdrX"
+	parms.AppLogPath = "./CmdrX"
 	parms.AppName = "CmdrX"
 	parms.AppExeFileName = "CmdrX.exe"
 	parms.NoOfJobs = 37

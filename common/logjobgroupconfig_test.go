@@ -14,7 +14,7 @@ func TestLogJobGroupConfig_New(t *testing.T) {
 	parms.StartTime = time.Now()
 	parms.AppVersion = "2.0.0"
 	parms.LogMode = LogVERBOSE
-	parms.AppLogDir = "./CmdrX"
+	parms.AppLogPath = "./CmdrX"
 	parms.AppName = "CmdrX"
 	parms.AppExeFileName = "CmdrX.exe"
 	parms.NoOfJobs = 37
