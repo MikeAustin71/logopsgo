@@ -21,7 +21,18 @@ const (
 	// DayNanoSeconds - Number of Nanoseconds in a 24-hour day
 	DayNanoSeconds = int64(1000 * 1000 * 1000 * 60 * 60 * 24)
 	// YearNanoSeconds - Number of Nanoseconds in a 365-day year
-	YearNanoSeconds = int64(1000 * 1000 * 1000 * 60 * 60 * 24 * 365)
+
+	/*
+	For the Gregorian calendar the average length of the calendar year
+	(the mean year) across the complete leap cycle of 400 years is 365.2425 days.
+	The Gregorian Average Year is therefore equivalent to 365 days, 5 hours,
+	49 minutes and 12 seconds.
+	Sources:
+	https://en.wikipedia.org/wiki/Year
+	Source: https://en.wikipedia.org/wiki/Gregorian_calendar
+*/
+	YearNanoSeconds = int64(31556952000000000)
+
 )
 
 // DurationUtility - holds elements of
@@ -44,6 +55,86 @@ type DurationUtility struct {
 	DefaultStr string
 }
 
+
+func (du *DurationUtility) AddDurationToThis(duration time.Duration) {
+
+	durPlus := du.TimeDuration + duration
+
+	elapsedDuration := du.GetDurationBreakDown(durPlus)
+
+	du.CopyToThis(elapsedDuration)
+}
+
+func (du *DurationUtility) AddToThis(duIn DurationUtility) {
+
+	durPlus := du.TimeDuration + duIn.TimeDuration
+
+	elapsedDuration := du.GetDurationBreakDown(durPlus)
+
+	du.CopyToThis(elapsedDuration)
+
+}
+
+// Empty - This method initializes
+// all of the fields in this
+// DurationUtility structure to thier
+// zero values.
+func (du *DurationUtility) Empty() {
+	du.TimeDuration = time.Duration(0)
+	du.Years = 0
+	du.Days = 0
+	du.Hours = 0
+	du.Minutes = 0
+	du.Seconds = 0
+	du.MilliSeconds = 0
+	du.MicroSeconds = 0
+	du.NanoSeconds = 0
+	du.NanosecStr = ""
+	du.DurationStr = ""
+	du.DefaultStr = ""
+
+}
+
+func (du *DurationUtility) CopyToThis(duIn DurationUtility) {
+	du.Empty()
+	du.TimeDuration = duIn.TimeDuration
+	du.Years = duIn.Years
+	du.Days = duIn.Days
+	du.Hours = duIn.Hours
+	du.Minutes = duIn.Minutes
+	du.Seconds = duIn.Seconds
+	du.MilliSeconds = duIn.MilliSeconds
+	du.MicroSeconds = duIn.MicroSeconds
+	du.NanoSeconds = duIn.NanoSeconds
+	du.NanosecStr = duIn.NanosecStr
+	du.DurationStr = duIn.DurationStr
+	du.DefaultStr = duIn.DefaultStr
+
+	return
+}
+
+func (du *DurationUtility) Equal(duIn DurationUtility) bool {
+
+	if du.TimeDuration != duIn.TimeDuration ||
+		du.Years != duIn.Years ||
+		du.Days != duIn.Days ||
+		du.Hours != duIn.Hours ||
+		du.Minutes != duIn.Minutes ||
+		du.Seconds != duIn.Seconds ||
+		du.MilliSeconds != duIn.MilliSeconds ||
+		du.MicroSeconds != duIn.MicroSeconds ||
+		du.NanoSeconds != duIn.NanoSeconds ||
+		du.NanosecStr != duIn.NanosecStr ||
+		du.DurationStr != duIn.DurationStr ||
+		du.DefaultStr != duIn.DefaultStr {
+		return false
+	}
+
+	return true
+
+}
+
+
 // GetDuration - Returns a time.Duration structure defining the duration between
 // input parameters startTime and endTime
 func (du DurationUtility) GetDuration(startTime time.Time, endTime time.Time) (time.Duration, error) {
@@ -61,6 +152,10 @@ func (du DurationUtility) GetDuration(startTime time.Time, endTime time.Time) (t
 	return endTime.Sub(startTime), nil
 }
 
+func (du DurationUtility) GenerateDuration(duIn DurationUtility) ( time.Duration, error){
+	return  du.GetDurationFromElapsedTime(duIn)
+}
+
 // GetDurationBreakDown - Receives a Duration type
 // and returns a breakdown of duration by years,
 // days, hours, minutes, seconds, milliseconds,
@@ -71,9 +166,14 @@ func (du DurationUtility) GetDuration(startTime time.Time, endTime time.Time) (t
 func (du DurationUtility) GetDurationBreakDown(d time.Duration) DurationUtility {
 	str := ""
 	durationUtility := DurationUtility{TimeDuration: d}
-	durationUtility.DefaultStr = fmt.Sprintf("%v", d)
 	firstEle := false
 	rd := int64(d)
+	durationUtility.DefaultStr = fmt.Sprintf("%v", d)
+	if rd == 0 {
+		durationUtility.DurationStr = "0-Nanoseconds"
+		durationUtility.NanosecStr =  "0-Nanoseconds"
+		return durationUtility
+	}
 
 	if rd >= YearNanoSeconds {
 		durationUtility.Years = rd / YearNanoSeconds
@@ -160,24 +260,6 @@ func (du DurationUtility) GetDurationBreakDown(d time.Duration) DurationUtility 
 
 }
 
-// GetElapsedTime - calculates the elapsed time
-// between input parameters startTime and endTime.
-// The result is returned in an DurationUtility
-// structure.
-func (du DurationUtility) GetElapsedTime(startTime time.Time, endTime time.Time) (DurationUtility, error) {
-
-	dur, err := du.GetDuration(startTime, endTime)
-
-	if err != nil {
-		s := "DateTimeUtility-GetElapsedTime Error: " + err.Error()
-
-		return DurationUtility{}, errors.New(s)
-	}
-
-	return du.GetDurationBreakDown(dur), nil
-
-}
-
 func (du DurationUtility) GetDurationFromElapsedTime(elapsedTime DurationUtility) (time.Duration, error) {
 	var dns int64
 
@@ -203,64 +285,34 @@ func (du DurationUtility) GetDurationFromElapsedTime(elapsedTime DurationUtility
 
 }
 
-func (du DurationUtility) GetTimePlusDuration(tStart time.Time, duration time.Duration) time.Time {
 
-	return tStart.Add(duration)
-}
+// GetElapsedTime - calculates the elapsed time
+// between input parameters startTime and endTime.
+// The result is returned in an DurationUtility
+// structure.
+func (du DurationUtility) GetElapsedTime(startTime time.Time, endTime time.Time) (DurationUtility, error) {
 
-func (du *DurationUtility) CopyToThis(duIn DurationUtility) {
-	du.TimeDuration = duIn.TimeDuration
-	du.Years = duIn.Years
-	du.Days = duIn.Days
-	du.Hours = duIn.Hours
-	du.Minutes = duIn.Minutes
-	du.Seconds = duIn.Seconds
-	du.MilliSeconds = duIn.MilliSeconds
-	du.MicroSeconds = duIn.MicroSeconds
-	du.NanoSeconds = duIn.NanoSeconds
-	du.NanosecStr = duIn.NanosecStr
-	du.DurationStr = duIn.DurationStr
-	du.DefaultStr = duIn.DefaultStr
+	dur, err := du.GetDuration(startTime, endTime)
 
-	return
-}
+	if err != nil {
+		s := "DateTimeUtility-GetElapsedTime Error: " + err.Error()
 
-func (du *DurationUtility) AddToThis(duIn DurationUtility) {
-
-	durPlus := du.TimeDuration + duIn.TimeDuration
-
-	elapsedDuration := du.GetDurationBreakDown(durPlus)
-
-	du.CopyToThis(elapsedDuration)
-
-}
-
-func (du *DurationUtility) AddDurationToThis(duration time.Duration) {
-
-	durPlus := du.TimeDuration + duration
-
-	elapsedDuration := du.GetDurationBreakDown(durPlus)
-
-	du.CopyToThis(elapsedDuration)
-}
-
-func (du *DurationUtility) Equal(duIn DurationUtility) bool {
-
-	if du.TimeDuration != duIn.TimeDuration ||
-		du.Years != duIn.Years ||
-		du.Days != duIn.Days ||
-		du.Hours != duIn.Hours ||
-		du.Minutes != duIn.Minutes ||
-		du.Seconds != duIn.Seconds ||
-		du.MilliSeconds != duIn.MilliSeconds ||
-		du.MicroSeconds != duIn.MicroSeconds ||
-		du.NanoSeconds != duIn.NanoSeconds ||
-		du.NanosecStr != duIn.NanosecStr ||
-		du.DurationStr != duIn.DurationStr ||
-		du.DefaultStr != duIn.DefaultStr {
-		return false
+		return DurationUtility{}, errors.New(s)
 	}
 
-	return true
+	return du.GetDurationBreakDown(dur), nil
 
 }
+
+// GetTimePlusDuration - Returns time plus input duration as a time.Time type.
+func (du DurationUtility) GetTimePlusDuration(tStartTime time.Time, duration time.Duration) time.Time {
+
+	return tStartTime.Add(duration)
+}
+
+// GetTimeMinusDuration - Returns time minus input duration as a time.Type type.
+func (du DurationUtility) GetTimeMinusDuration(tStartTime time.Time, duration time.Duration) time.Time {
+
+	return tStartTime.Add(-duration)
+}
+

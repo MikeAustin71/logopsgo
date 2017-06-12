@@ -73,3 +73,224 @@ func TestStrPadLeftToCenter(t *testing.T) {
 	}
 
 }
+
+func TestStringUtility_TrimEndMultiple_001(t *testing.T) {
+	tStr := " 16:26:32   CST "
+	expected := "16:26:32 CST"
+	su := StringUtility{}
+
+	result, err := su.TrimEndMultiple(tStr, ' ')
+
+	if err != nil {
+		t.Error("Error Return from TrimEndMultiple: ", err.Error())
+	}
+
+	if result != expected {
+		t.Errorf("Expected result == %v, instead received result== %v", expected, result)
+	}
+
+}
+
+func TestStringUtility_TrimEndMultiple_002(t *testing.T) {
+	tStr := "       Hello          World        "
+	expected := "Hello World"
+	su := StringUtility{}
+
+	result, err := su.TrimEndMultiple(tStr, ' ')
+
+	if err != nil {
+		t.Error("Error Return from TrimEndMultiple: ", err.Error())
+	}
+
+	if result != expected {
+		t.Errorf("Expected result == %v, instead received result== %v", expected, result)
+	}
+
+}
+
+func TestStringUtility_TrimEndMultiple_003(t *testing.T) {
+	tStr := "Hello          World        "
+	expected := "Hello World"
+	su := StringUtility{}
+
+	result, err := su.TrimEndMultiple(tStr, ' ')
+
+	if err != nil {
+		t.Error("Error Return from TrimEndMultiple: ", err.Error())
+	}
+
+	if result != expected {
+		t.Errorf("Expected result == %v, instead received result== %v", expected, result)
+	}
+
+}
+
+func TestStringUtility_TrimEndMultiple_004(t *testing.T) {
+	tStr := " Hello          World"
+	expected := "Hello World"
+	su := StringUtility{}
+
+	result, err := su.TrimEndMultiple(tStr, ' ')
+
+	if err != nil {
+		t.Error("Error Return from TrimEndMultiple: ", err.Error())
+	}
+
+
+	if result != expected {
+		t.Errorf("Expected result == '%v' instead received result== '%v'", expected, result)
+	}
+
+}
+
+func TestStringUtility_TrimEndMultiple_005(t *testing.T) {
+	tStr := "Hello World"
+	expected := "Hello World"
+	su := StringUtility{}
+
+	result, err := su.TrimEndMultiple(tStr, ' ')
+
+	if err != nil {
+		t.Error("Error Return from TrimEndMultiple: ", err.Error())
+	}
+
+
+	if result != expected {
+		t.Errorf("Expected result == '%v' instead received result== '%v'", expected, result)
+	}
+
+}
+
+func TestStringUtility_TrimEndMultiple_006(t *testing.T) {
+	tStr := "Hello World "
+	expected := "Hello World"
+	su := StringUtility{}
+
+	result, err := su.TrimEndMultiple(tStr, ' ')
+
+	if err != nil {
+		t.Error("Error Return from TrimEndMultiple: ", err.Error())
+	}
+
+
+	if result != expected {
+		t.Errorf("Expected result == '%v' instead received result== '%v'", expected, result)
+	}
+
+}
+
+func TestStringUtility_TrimEndMultiple_007(t *testing.T) {
+	tStr := " Hello World "
+	expected := "Hello World"
+	su := StringUtility{}
+
+	result, err := su.TrimEndMultiple(tStr, ' ')
+
+	if err != nil {
+		t.Error("Error Return from TrimEndMultiple: ", err.Error())
+	}
+
+
+	if result != expected {
+		t.Errorf("Expected result == '%v' instead received result== '%v'", expected, result)
+	}
+
+}
+
+func TestStringUtility_SwapRune_001(t *testing.T) {
+	su:= StringUtility{}
+
+	tStr := "  Hello   World  "
+	expected := "!!Hello!!!World!!"
+	result, err := su.SwapRune(tStr, ' ', '!')
+
+	if err != nil {
+		t.Error("Error returned from SwapRune: ", err.Error())
+	}
+
+	if result != expected {
+		t.Errorf("Expected result == '%v' instead received result== '%v'", expected, result)
+	}
+
+	resultLen:= len(result)
+	expectedLen := len(expected)
+
+	if resultLen != expectedLen {
+		t.Errorf("Expected result length == '%v' instead received result length == '%v'", expectedLen, resultLen)
+	}
+
+}
+
+func TestStringUtility_SwapRune_002(t *testing.T) {
+	su:= StringUtility{}
+
+	tStr := "HelloWorld"
+	expected := "HelloWorld"
+	result, err := su.SwapRune(tStr, ' ', '!')
+
+	if err != nil {
+		t.Error("Error returned from SwapRune: ", err.Error())
+	}
+
+	if result != expected {
+		t.Errorf("Expected result == '%v' instead received result== '%v'", expected, result)
+	}
+
+	resultLen:= len(result)
+	expectedLen := len(expected)
+
+	if resultLen != expectedLen {
+		t.Errorf("Expected result length == '%v' instead received result length == '%v'", expectedLen, resultLen)
+	}
+
+}
+
+func TestStringUtility_SwapRune_003(t *testing.T) {
+	su:= StringUtility{}
+
+	tStr := "Hello Worldx"
+	expected := "Hello WorldX"
+	result, err := su.SwapRune(tStr, 'x', 'X')
+
+	if err != nil {
+		t.Error("Error returned from SwapRune: ", err.Error())
+	}
+
+	if result != expected {
+		t.Errorf("Expected result == '%v' instead received result== '%v'", expected, result)
+	}
+
+	resultLen:= len(result)
+	expectedLen := len(expected)
+
+	if resultLen != expectedLen {
+		t.Errorf("Expected result length == '%v' instead received result length == '%v'", expectedLen, resultLen)
+	}
+
+}
+
+func TestStringUtility_SwapRune_004(t *testing.T) {
+	su:= StringUtility{}
+
+	tStr := "xHello World"
+	expected := "XHello World"
+	result, err := su.SwapRune(tStr, 'x', 'X')
+
+	if err != nil {
+		t.Error("Error returned from SwapRune: ", err.Error())
+	}
+
+	if result != expected {
+		t.Errorf("Expected result == '%v' instead received result== '%v'", expected, result)
+	}
+
+	resultLen:= len(result)
+	expectedLen := len(expected)
+
+	if resultLen != expectedLen {
+		t.Errorf("Expected result length == '%v' instead received result length == '%v'", expectedLen, resultLen)
+	}
+
+}
+
+
