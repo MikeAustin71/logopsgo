@@ -19,20 +19,35 @@ func main() {
 
 func ini2() {
 
-	parms := common.LogStartupParameters{}
+	dtf := common.DateTimeFormatUtility{}
+	dtf.CreateAllFormatsInMemory()
+	parms := common.StartupParameters{}
 
 	parms.StartTime = time.Now()
 	parms.AppVersion = "2.0.0"
 	parms.LogMode = common.LogVERBOSE
-	parms.AppLogPath = "./CmdrX"
-	parms.AppName = "CmdrX"
-	parms.AppExeFileName = "CmdrX.exe"
+	parms.AppLogPath = "./cmdrX"
+	parms.AppName = "cmdrX"
+	parms.AppExeFileName = "cmdrX.exe"
 	parms.NoOfJobs = 37
-	parms.CommandFileName = "CmdrX.xml"
+	parms.CommandFileName = "cmdrX.xml"
+	parms.Dtfmt = &dtf
+	cmdPathFileName := "./cmdrX.xml"
+	fh, err := parms.AssembleAppPath(cmdPathFileName)
+
+	if err != nil {
+		panic(err)
+	}
+
+	if !fh.AbsolutePathIsPopulated {
+		panic(fmt.Errorf("Failed to lcoate Command File %v", cmdPathFileName))
+	}
+	parms.AppPath = fh.AbsolutePath
+	parms.BaseStartDir = fh.AbsolutePath
 
 	parent := common.ErrBaseInfo{}.GetNewParentInfo(thisSrcFileName, "ini2", thisErrBlockNo)
 
-	lg := common.LogJobGroupConfig{}
+	lg := common.LogJobGroup{}
 
 	se := lg.New(parms, parent)
 

@@ -7,7 +7,7 @@ import (
 )
 
 func TestLogJobGroupConfig_New(t *testing.T) {
-	parms := LogStartupParameters{}
+	parms := StartupParameters{}
 	thisSrcFileName := "logjobgroupconfig_test.go"
 	thisMethodName := "TestLogJobGroupConfig_New"
 	thisErrBlockNo := int64(80000)
@@ -22,7 +22,7 @@ func TestLogJobGroupConfig_New(t *testing.T) {
 
 	parent := ErrBaseInfo{}.GetNewParentInfo(thisSrcFileName, thisMethodName, thisErrBlockNo)
 
-	lg := LogJobGroupConfig{}
+	lg := LogJobGroup{}
 
 	se := lg.New(parms, parent)
 
