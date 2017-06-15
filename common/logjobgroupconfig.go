@@ -44,7 +44,7 @@ type LogJobGroup struct {
 	BaseStartDir            string
 	AppNoOfJobs             int
 	NoOfJobGroupMsgs        int
-	NoOfJobMsgs							int
+	NoOfJobMsgs             int
 	NoOfJobsCompleted       int
 	LogFileRetentionInDays  int
 	NoOfLogFilesPurged      int
@@ -170,18 +170,20 @@ func (logOps *LogJobGroup) InitializeLogFile(parent []ErrBaseInfo) SpecErr {
 		return se.New(s, err, isPanic, 203)
 	}
 
-	si := logOps.PurgeOldLogFiles(se.AddBaseToParentInfo())
+	si := logOps.purgeOldLogFiles(se.AddBaseToParentInfo())
 
 	if si.IsErr {
 		si.IsPanic = true
 		return si
 	}
 
-	return logOps.WriteFileGroupHeaderToLog(se.AddBaseToParentInfo())
+	return logOps.writeFileGroupHeaderToLog(se.AddBaseToParentInfo())
 }
 
-func (logOps *LogJobGroup) PurgeOldLogFiles(parent []ErrBaseInfo) SpecErr {
-	se := logOps.baseLogErrConfig(parent, "PurgeOldLogFiles()")
+// purgeOldLogFiles - Deletes log files which are older than
+// logOps.LogFileRetentionInDays
+func (logOps *LogJobGroup) purgeOldLogFiles(parent []ErrBaseInfo) SpecErr {
+	se := logOps.baseLogErrConfig(parent, "purgeOldLogFiles()")
 
 	fh := FileHelper{}
 
@@ -214,17 +216,17 @@ func (logOps *LogJobGroup) PurgeOldLogFiles(parent []ErrBaseInfo) SpecErr {
 
 }
 
-// WriteFileGroupHeaderToLog - Writes the Job Group
+// writeFileGroupHeaderToLog - Writes the Job Group
 // Header info to the log file. This is a one-time
 // operation for each log file. Method InitializeLogFile(..)
 // MUST be called before first use of this method.
 // The Header is always the first element in the Log.
-func (logOps *LogJobGroup) WriteFileGroupHeaderToLog(parent []ErrBaseInfo) SpecErr {
+func (logOps *LogJobGroup) writeFileGroupHeaderToLog(parent []ErrBaseInfo) SpecErr {
 	var err error
 	var isPanic bool
 	var str, stx string
 
-	se := logOps.baseLogErrConfig(parent, "WriteFileGroupHeaderToLog()")
+	se := logOps.baseLogErrConfig(parent, "writeFileGroupHeaderToLog()")
 
 	thisParentInfo := se.AddBaseToParentInfo()
 
@@ -321,6 +323,7 @@ func (logOps *LogJobGroup) WriteFileGroupHeaderToLog(parent []ErrBaseInfo) SpecE
 
 	}
 
+	logOps.AppLogDirWalkInfo = DirWalkInfo{}
 	logOps.writeFileStr(logOps.Banner1, thisParentInfo)
 	logOps.writeFileStr(logOps.Banner1, thisParentInfo)
 
