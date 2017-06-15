@@ -289,34 +289,34 @@ func (logOps *LogJobGroup) writeFileGroupHeaderToLog(parent []ErrBaseInfo) SpecE
 
 	str = fmt.Sprintf("Initial Application Path: %v", logOps.AppPath)
 
-	logOps.writeTabFileStr(str, thisParentInfo)
+	logOps.writeTabFileStr(str, 1, thisParentInfo)
 
 	str = fmt.Sprintf("This Log File: %v", logOps.AppLogPathFileName)
 
-	logOps.writeTabFileStr(str, thisParentInfo)
+	logOps.writeTabFileStr(str, 1, thisParentInfo)
 
 	str = fmt.Sprintf("Base Start Directory: %v", logOps.BaseStartDir)
 
-	logOps.writeTabFileStr(str, thisParentInfo)
+	logOps.writeTabFileStr(str, 1, thisParentInfo)
 
 	str = fmt.Sprintf("Number Of Old Log Files Deleted: %v", logOps.NoOfLogFilesPurged)
 
-	logOps.writeTabFileStr(str, thisParentInfo)
+	logOps.writeTabFileStr(str, 1, thisParentInfo)
 
 	if logOps.NoOfLogFilesPurged > 0 {
 
 		str = "!!!!!! Log Files Deleted !!!!!!"
 		stx, _ = su.StrCenterInStr(str, logOps.BannerLen)
 
-		logOps.writeTabFileStr(stx, thisParentInfo)
+		logOps.writeTabFileStr(stx, 1, thisParentInfo)
 		logOps.writeFileStr(logOps.Banner4, thisParentInfo)
 		for i := 0; i < logOps.NoOfLogFilesPurged; i++ {
 			fi := logOps.AppLogDirWalkInfo.DeletedFiles[i]
 
-			str = fmt.Sprintf("   %v. File Date: %v   File Name: %v",
+			str = fmt.Sprintf("%v. File Date: %v   File Name: %v",
 				i+1, fi.Info.ModTime().Format(FmtDateTimeSecText), fi.Info.Name())
 
-			logOps.writeTabFileStr(str, thisParentInfo)
+			logOps.writeTabFileStr(str, 2, thisParentInfo)
 		}
 
 		logOps.writeFileStr(logOps.Banner4, thisParentInfo)
@@ -429,9 +429,16 @@ func (logOps *LogJobGroup) WriteJobGroupFooterToLog(parent []ErrBaseInfo) SpecEr
 	return se.SignalNoErrors()
 }
 
-func (logOps *LogJobGroup) writeTabFileStr(s string, parent []ErrBaseInfo) {
+func (logOps *LogJobGroup) writeTabFileStr(s string, noOfTabs int, parent []ErrBaseInfo) {
 
-	stx := fmt.Sprintf("%v%v", logOps.LeftTab, s)
+	stx := ""
+
+	for i:=0; i < noOfTabs; i++ {
+		stx+= logOps.LeftTab
+	}
+
+	stx += s
+
 	_, err := logOps.FilePtr.WriteString(stx)
 
 	if err != nil {
