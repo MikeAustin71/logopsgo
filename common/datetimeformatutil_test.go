@@ -1,8 +1,8 @@
 package common
 
 import (
-	"testing"
 	"fmt"
+	"testing"
 )
 
 func TestDateTimeFormatUtility_ParseDateTimeStrings(t *testing.T) {
@@ -46,6 +46,7 @@ func GetXDateTimeSamples() [][][]string {
 	d = append(d, [][]string{{"07-6-2016 9:30AM", "Wednesday July 6, 2016 09:30:00.000000000 +0000 UTC"}})
 	d = append(d, [][]string{{"07-06-2016 9:30AM", "Wednesday July 6, 2016 09:30:00.000000000 +0000 UTC"}})
 	d = append(d, [][]string{{"November 12, 2016", "Saturday November 12, 2016 00:00:00.000000000 +0000 UTC"}})
+	d = append(d, [][]string{{"11/12/2016", "Saturday November 12, 2016 00:00:00.000000000 +0000 UTC"}})
 	d = append(d, [][]string{{"12 Nov 2016", "Saturday November 12, 2016 00:00:00.000000000 +0000 UTC"}})
 	d = append(d, [][]string{{"12 November 2016", "Saturday November 12, 2016 00:00:00.000000000 +0000 UTC"}})
 	d = append(d, [][]string{{"November 12, 11:26pm -0600 CST 2016", "Saturday November 12, 2016 23:26:00.000000000 -0600 CST"}})

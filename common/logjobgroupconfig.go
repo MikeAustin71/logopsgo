@@ -191,9 +191,10 @@ func (logOps *LogJobGroup) purgeOldLogFiles(parent []ErrBaseInfo) SpecErr {
 		return se.SignalNoErrors()
 	}
 
-	logDur := time.Duration(logOps.LogFileRetentionInDays*24) * time.Hour
+	logDur := time.Duration(logOps.LogFileRetentionInDays*24*-1) * time.Hour
 	du := DurationUtility{}
-	thresholdTime := du.GetTimeMinusDuration(time.Now(), logDur)
+	du.SetStartTimeDuration (time.Now(), logDur)
+	thresholdTime := du.StartDateTime
 
 	if thresholdTime.IsZero() {
 		return se.SignalNoErrors()
@@ -410,7 +411,8 @@ func (logOps *LogJobGroup) WriteJobGroupFooterToLog(parent []ErrBaseInfo) SpecEr
 	stx = logOps.LeftTab + fmt.Sprintf("JobGroup     End Time: %v ", str)
 	logOps.writeFileStr(stx, thisParentInfo)
 
-	ed, err2 := dur.GetElapsedTime(logOps.StartTime, logOps.EndTime)
+	dur.SetStartEndTimes(logOps.StartTime, logOps.EndTime)
+	ed, err2 := dur.GetYearsMthsWeeksTimeAbbrv()
 
 	if err2 != nil {
 		s := fmt.Sprintf("DateTimeUtility:GetElapsedTime threw error on Start '%v' and End Time '%v'", logOps.StartTime, logOps.EndTime)
@@ -419,7 +421,7 @@ func (logOps *LogJobGroup) WriteJobGroupFooterToLog(parent []ErrBaseInfo) SpecEr
 
 	}
 
-	stx = logOps.LeftTab + fmt.Sprintf("JobGroup Elapsed Time: %v ", ed.NanosecStr)
+	stx = logOps.LeftTab + fmt.Sprintf("JobGroup Elapsed Time: %v ", ed.DisplayStr)
 	logOps.writeFileStr(stx, thisParentInfo)
 
 	logOps.writeFileStr(logOps.Banner1, thisParentInfo)

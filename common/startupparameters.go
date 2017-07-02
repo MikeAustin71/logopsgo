@@ -38,7 +38,7 @@ func (sUp * StartupParameters) AssembleAppPath(cmdFilePath string) (FileHelper, 
 	fh2, err := fh.GetPathFileNameElements(cmdFilePath)
 
 	if err != nil {
-		return fh, fmt.Errorf("sUp.AssembleAppPath() Error.Failed to Get Path File Name Elements for Command File: %v.  Error = ", cmdFilePath, err.Error())
+		return fh, fmt.Errorf("sUp.AssembleAppPath() Error.Failed to Get Path File Name Elements for Command File: %v.  Error = %v", cmdFilePath, err.Error())
 	}
 
 	return fh2, nil

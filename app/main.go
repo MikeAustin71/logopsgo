@@ -32,7 +32,7 @@ func ini2() {
 	parms.NoOfJobs = 37
 	parms.CommandFileName = "cmdrX.xml"
 	parms.Dtfmt = &dtf
-	cmdPathFileName := "./cmdrX.xml"
+	cmdPathFileName := "D:/go/work/src/MikeAustin71/logopsgo/common/cmdrXCmds.xml"
 	fh, err := parms.AssembleAppPath(cmdPathFileName)
 
 	if err != nil {
