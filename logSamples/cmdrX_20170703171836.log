@@ -5,8 +5,8 @@
                  Execution Job Group Command File: cmdrX.xml 
                         Starting Execution of 37 Jobs. 
 ================================================================================
-  Job Execution Start Time UTC: Monday July 3, 2017 22:00:18.423111300 +0000 UTC 
-Job Execution Start Time Local: Monday July 3, 2017 17:00:16.123538800 -0500 CDT 
+  Job Execution Start Time UTC: Monday July 3, 2017 22:18:36.685107800 +0000 UTC 
+Job Execution Start Time Local: Monday July 3, 2017 17:18:36.685107800 -0500 CDT 
  Job Execution Local Time Zone: Local 
 ================================================================================
 
@@ -17,7 +17,7 @@ Job Execution Start Time Local: Monday July 3, 2017 17:00:16.123538800 -0500 CDT
 ********************************************************************************
 
   This Log File:
-    D:\go\work\src\MikeAustin71\logopsgo\app\cmdrX\cmdrX_20170703170016.log
+    D:\go\work\src\MikeAustin71\logopsgo\app\cmdrX\cmdrX_20170703171836.log
 ********************************************************************************
 
   Base Start Directory:
@@ -42,16 +42,16 @@ Job Execution Start Time Local: Monday July 3, 2017 17:00:16.123538800 -0500 CDT
   Number of Messages Logged: 0 
 ********************************************************************************
 --------------------------------------------------------------------------------
-  JobGroup   Start Time UTC: 2017-07-03 22:00:18.423111300 
-  JobGroup     End Time UTC: 2017-07-03 22:00:28.429491600 
+  JobGroup   Start Time UTC: 2017-07-03 22:18:36.685107800 
+  JobGroup     End Time UTC: 2017-07-03 22:18:49.084882200 
 --------------------------------------------------------------------------------
-  JobGroup Start Time Local: 2017-07-03 17:00:16.123538800 
-  JobGroup   End Time Local: 2017-07-03 17:00:28.429491600 
+  JobGroup Start Time Local: 2017-07-03 17:18:36.685107800 
+  JobGroup   End Time Local: 2017-07-03 17:18:49.084882200 
 --------------------------------------------------------------------------------
 ********************************************************************************
   JobGroup Elapsed Time:
 --------------------------------------------------------------------------------
-    0-Hours 0-Minutes 10-Seconds 6-Milliseconds 380-Microseconds 300-Nanoseconds
+  0-Hours 0-Minutes 12-Seconds 399-Milliseconds 774-Microseconds 400-Nanoseconds
 --------------------------------------------------------------------------------
 ********************************************************************************
 

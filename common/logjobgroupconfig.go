@@ -474,7 +474,7 @@ func (logOps *LogJobGroup) WriteJobGroupFooterToLog(parent []ErrBaseInfo) SpecEr
 	logOps.writeTabFileStr(stx, 1, thisParentInfo)
 	logOps.writeFileStr(logOps.Banner4, thisParentInfo)
 	stx = ed.DisplayStr + "\n"
-	logOps.writeTabFileStr(stx, 2, thisParentInfo)
+	logOps.writeTabFileStr(stx, 1, thisParentInfo)
 	logOps.writeFileStr(logOps.Banner4, thisParentInfo)
 	logOps.writeFileStr(logOps.Banner3, thisParentInfo)
 	logOps.writeFileStr("\n", thisParentInfo)

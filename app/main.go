@@ -22,11 +22,11 @@ func ini2() {
 	tz := common.TimeZoneUtility{}
 	parms := common.StartupParameters{}
 	parms.IanaTimeZone = "Local"
-	tzLocal, _ := tz.ConvertTz(time.Now().UTC(), parms.IanaTimeZone )
+	parms.StartTimeUTC = time.Now().UTC()
+	tzLocal, _ := tz.ConvertTz(parms.StartTimeUTC, parms.IanaTimeZone)
 	dtf := common.DateTimeFormatUtility{}
 	dtf.CreateAllFormatsInMemory()
 
-	parms.StartTimeUTC = time.Now().UTC()
 	parms.StartTime = tzLocal.TimeOut
 	parms.AppVersion = "2.0.0"
 	parms.LogMode = common.LogVERBOSE
@@ -61,7 +61,6 @@ func ini2() {
 	}
 
 	dur := common.DurationUtility{}
-
 
 	time.Sleep(dur.GetDurationFromSeconds(10))
 
