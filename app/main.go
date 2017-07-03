@@ -19,11 +19,15 @@ func main() {
 
 func ini2() {
 
+	tz := common.TimeZoneUtility{}
+	parms := common.StartupParameters{}
+	parms.IanaTimeZone = "Local"
+	tzLocal, _ := tz.ConvertTz(time.Now().UTC(), parms.IanaTimeZone )
 	dtf := common.DateTimeFormatUtility{}
 	dtf.CreateAllFormatsInMemory()
-	parms := common.StartupParameters{}
 
-	parms.StartTime = time.Now()
+	parms.StartTimeUTC = time.Now().UTC()
+	parms.StartTime = tzLocal.TimeOut
 	parms.AppVersion = "2.0.0"
 	parms.LogMode = common.LogVERBOSE
 	parms.AppLogPath = "./cmdrX"
@@ -55,6 +59,13 @@ func ini2() {
 		fmt.Println(se.Error())
 		return
 	}
+
+	dur := common.DurationUtility{}
+
+
+	time.Sleep(dur.GetDurationFromSeconds(10))
+
+	lg.WriteJobGroupFooterToLog(parent)
 
 	fmt.Println("AppLogPathFileName", lg.AppLogPathFileName)
 

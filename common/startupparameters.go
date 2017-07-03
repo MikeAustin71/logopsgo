@@ -15,6 +15,7 @@ type StartupParameters struct {
 	BaseStartDir						string
 	AppVersion              string
 	CommandFileName         string
+	StartTimeUTC						time.Time
 	StartTime               time.Time
 	AppLogPath              string
 	AppLogFileName          string
