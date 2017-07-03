@@ -295,10 +295,33 @@ func TestTimeZoneUtility_ConvertTz_02(t *testing.T) {
 
 	utcTOut := tzuBeijing.TimeUTC.Format(fmtstr)
 
-
 	if utcTime != utcTOut {
 		t.Errorf("Error. UTC Time from tzuBeijing.TimeUTC failed! Expected %v. Instead, got %v.", utcTime, utcTOut)
 
+	}
+
+}
+
+func TestTimeZoneUtility_ConvertTz_03(t *testing.T) {
+	t1UTCStr := "2017-07-02 22:00:18.423111300 +0000 UTC"
+	fmtstr := "2006-01-02 15:04:05.000000000 -0700 MST"
+	t2LocalStr := "2017-07-02 17:00:18.423111300 -0500 CDT"
+	localTzStr := "America/Chicago"
+
+	t1, _ := time.Parse(fmtstr, t1UTCStr)
+
+	tz := TimeZoneUtility{}
+
+	tzLocal, _ := tz.ConvertTz(t1, localTzStr)
+	t1OutStr := tzLocal.TimeIn.Format(fmtstr)
+	t2OutStr := tzLocal.TimeOut.Format(fmtstr)
+
+	if t1UTCStr != t1OutStr {
+		t.Errorf("Expected Input Time: %v. Error - Instead, got %v", t1UTCStr, t1OutStr)
+	}
+
+	if t2LocalStr != t2OutStr {
+		t.Errorf("Expected Output Local Time: %v. Error - Instead, got %v", t2LocalStr, t2OutStr)
 	}
 
 }
