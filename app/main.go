@@ -7,66 +7,103 @@ import (
 )
 
 const (
-	thisSrcFileName = "main.go"
-	thisErrBlockNo  = int64(1000)
+	srcFileNameLogOpsMain = "main.go"
+	errBlockNoLogOpsMain  = int64(1000000)
+	cmdPathFileName = "./app/cmdrXCmds.xml"
+	appPathFileName = "./app/cmdrX.exe"
+	appLogPathOnly = "./app/cmdrX/alog.log"
 )
 
 func main() {
 
-	ini2()
+	parent := common.ErrBaseInfo{}.GetNewParentInfo(srcFileNameLogOpsMain, "main", errBlockNoLogOpsMain)
+	StartUp(parent)
 
 }
 
-func ini2() {
+func StartUp(parent []common.ErrBaseInfo) common.SpecErr {
 
-	tz := common.TimeZoneUtility{}
+	se := baseLogErrConfigMain(parent, "StartUp")
+
 	parms := common.StartupParameters{}
-	parms.IanaTimeZone = "Local"
-	parms.StartTimeUTC = time.Now().UTC()
-	tzLocal, _ := tz.ConvertTz(parms.StartTimeUTC, parms.IanaTimeZone)
+
+	appFileParms, sea := parms.AssembleAppPath(appPathFileName, se.AddBaseToParentInfo())
+
+	if sea.IsErr {
+		panic(sea)
+	}
+
+	cmdFileParms, sea := parms.AssembleCmdPath(cmdPathFileName, se.AddBaseToParentInfo())
+
+	if sea.IsErr {
+		panic(sea)
+	}
+
+	appLogPathParms, sea := parms.AssembleLogPath(appLogPathOnly, se.AddBaseToParentInfo())
+
+	cmds, sea := common.ParseXML(cmdFileParms.AbsolutePathFileName, parent)
+
+	if sea.IsErr {
+		panic(sea)
+	}
+
+	cmds.FormatCmdParameters()
+	sea = cmds.SetBatchStartTime(se.AddBaseToParentInfo())
+	if sea.IsErr {
+		panic(sea)
+	}
+
+	parms.IanaTimeZone = cmds.CmdJobsHdr.IanaTimeZone
+	parms.StartTimeUTC = cmds.CmdJobsHdr.CmdBatchStartUTC
+	parms.StartTime = cmds.CmdJobsHdr.CmdBatchStartTime
 	dtf := common.DateTimeFormatUtility{}
 	dtf.CreateAllFormatsInMemory()
 
-	parms.StartTime = tzLocal.TimeOut
+
 	parms.AppVersion = "2.0.0"
 	parms.LogMode = common.LogVERBOSE
-	parms.AppLogPath = "./cmdrX"
-	parms.AppName = "cmdrX"
-	parms.AppExeFileName = "cmdrX.exe"
-	parms.NoOfJobs = 37
-	parms.CommandFileName = "cmdrX.xml"
+	parms.AppLogPath = appLogPathParms.AbsolutePath
+	parms.AppName = appFileParms.FileName
+	parms.AppExeFileName = appFileParms.FileNameExt
+	parms.AppPath = appFileParms.AbsolutePath
+	parms.BaseStartDir = appFileParms.AbsolutePath
+	parms.CommandFileName = cmdFileParms.FileNameExt
+	parms.NoOfJobs = cmds.CmdJobsHdr.NoOfCmdJobs
 	parms.Dtfmt = &dtf
-	cmdPathFileName := "D:/go/work/src/MikeAustin71/logopsgo/common/cmdrXCmds.xml"
-	fh, err := parms.AssembleAppPath(cmdPathFileName)
-
-	if err != nil {
-		panic(err)
-	}
-
-	if !fh.AbsolutePathIsPopulated {
-		panic(fmt.Errorf("Failed to lcoate Command File %v", cmdPathFileName))
-	}
-	parms.AppPath = fh.AbsolutePath
-	parms.BaseStartDir = fh.AbsolutePath
-
-	parent := common.ErrBaseInfo{}.GetNewParentInfo(thisSrcFileName, "ini2", thisErrBlockNo)
 
 	lg := common.LogJobGroup{}
 
-	se := lg.New(parms, parent)
+	sea = lg.New(parms, parent)
 
-	if common.CheckIsSpecErr(se) {
-		fmt.Println(se.Error())
-		return
+	if sea.IsErr {
+		panic(sea)
 	}
 
 	dur := common.DurationUtility{}
 
 	time.Sleep(dur.GetDurationFromSeconds(10))
 
-	lg.WriteJobGroupFooterToLog(parent)
+	sea = cmds.SetBatchEndTime(se.AddBaseToParentInfo())
+
+	if sea.IsErr {
+		panic(sea)
+	}
+
+	lg.WriteJobGroupFooterToLog(cmds, parent)
 
 	fmt.Println("AppLogPathFileName", lg.AppLogPathFileName)
 
 	fmt.Println("AppLogBanner1", lg.Banner1)
+
+	return se.SignalNoErrors()
+}
+
+
+// baseLogErrConfig - Used internally by LogJobGroup
+// methods to set up error messages.
+func baseLogErrConfigMain(parent []common.ErrBaseInfo, funcName string) common.SpecErr {
+
+	bi := common.ErrBaseInfo{}.New(srcFileNameLogOpsMain, funcName, errBlockNoLogOpsMain)
+
+	return common.SpecErr{}.InitializeBaseInfo(parent, bi)
 }

@@ -364,7 +364,7 @@ func (logOps *LogJobGroup) writeFileGroupHeaderToLog(parent []ErrBaseInfo) SpecE
 // WriteJobGroupFooterToLog - Writes the trailing Job Group data
 // to the Log File. This is the last entry in the Log. The File
 // pointer is closed here.
-func (logOps *LogJobGroup) WriteJobGroupFooterToLog(parent []ErrBaseInfo) SpecErr {
+func (logOps *LogJobGroup) WriteJobGroupFooterToLog(cmds CommandBatch, parent []ErrBaseInfo) SpecErr {
 
 	var err error
 	var isPanic bool
@@ -434,16 +434,16 @@ func (logOps *LogJobGroup) WriteJobGroupFooterToLog(parent []ErrBaseInfo) SpecEr
 	logOps.writeFileStr(logOps.Banner4, thisParentInfo)
 
 	dt := DateTimeUtility{}
-	dur := DurationUtility{}
-	tz := TimeZoneUtility{}
+
+	logOps.writeFileStr("\n", thisParentInfo)
+	stx = "Job Group Execution Times:\n"
+	logOps.writeTabFileStr(stx, 1, thisParentInfo)
 	str = dt.GetDateTimeNanoSecText(logOps.StartTimeUTC)
 	stx = fmt.Sprintf("JobGroup   Start Time UTC: %v \n", str)
 	logOps.writeTabFileStr(stx, 1, thisParentInfo)
 
-	logOps.EndTimeUTC = time.Now().UTC()
-	tzLocal, _ := tz.ConvertTz(logOps.EndTimeUTC, logOps.IanaTimeZone)
-
-	logOps.EndTime = tzLocal.TimeOut
+	logOps.EndTimeUTC = cmds.CmdJobsHdr.CmdBatchEndUTC
+	logOps.EndTime = cmds.CmdJobsHdr.CmdBatchEndTime
 	str = dt.GetDateTimeNanoSecText(logOps.EndTimeUTC)
 	stx = fmt.Sprintf("JobGroup     End Time UTC: %v \n", str)
 	logOps.writeTabFileStr(stx, 1, thisParentInfo)
@@ -460,20 +460,17 @@ func (logOps *LogJobGroup) WriteJobGroupFooterToLog(parent []ErrBaseInfo) SpecEr
 
 	logOps.writeFileStr(logOps.Banner4, thisParentInfo)
 
-	dur.SetStartEndTimes(logOps.StartTimeUTC, logOps.EndTimeUTC)
-	ed, err2 := dur.GetYearsMthsWeeksTimeAbbrv()
+	stx = fmt.Sprintf("JobGroup  Local Time Zone: %v \n", logOps.IanaTimeZone)
+	logOps.writeTabFileStr(stx, 1, thisParentInfo)
 
-	if err2 != nil {
-		s := fmt.Sprintf("DateTimeUtility:GetElapsedTime threw error on Start '%v' and End Time '%v'", logOps.StartTime, logOps.EndTime)
-		isPanic = true
-		return se.New(s, err, isPanic, 805)
-	}
+	logOps.writeFileStr(logOps.Banner4, thisParentInfo)
+	logOps.writeFileStr("\n", thisParentInfo)
 
 	logOps.writeFileStr(logOps.Banner3, thisParentInfo)
 	stx = "JobGroup Elapsed Time:\n"
 	logOps.writeTabFileStr(stx, 1, thisParentInfo)
 	logOps.writeFileStr(logOps.Banner4, thisParentInfo)
-	stx = ed.DisplayStr + "\n"
+	stx = cmds.CmdJobsHdr.CmdBatchElapsedTime + "\n"
 	logOps.writeTabFileStr(stx, 1, thisParentInfo)
 	logOps.writeFileStr(logOps.Banner4, thisParentInfo)
 	logOps.writeFileStr(logOps.Banner3, thisParentInfo)
