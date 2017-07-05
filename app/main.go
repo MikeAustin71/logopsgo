@@ -25,13 +25,13 @@ func main() {
 
 	fmt.Println("Executable Directory: ", s)
 
-
+	lg := common.LogJobGroup{}
 	parent := common.ErrBaseInfo{}.GetNewParentInfo(srcFileNameLogOpsMain, "main", errBlockNoLogOpsMain)
-	StartUp(parent)
+	StartUp(&lg, parent)
 
 }
 
-func StartUp(parent []common.ErrBaseInfo) common.SpecErr {
+func StartUp(lg *common.LogJobGroup,parent []common.ErrBaseInfo) common.SpecErr {
 
 	se := baseLogErrConfigMain(parent, "StartUp")
 
@@ -81,7 +81,7 @@ func StartUp(parent []common.ErrBaseInfo) common.SpecErr {
 	parms.NoOfJobs = cmds.CmdJobsHdr.NoOfCmdJobs
 	parms.Dtfmt = &dtf
 
-	lg := common.LogJobGroup{}
+
 
 	sea = lg.New(parms, parent)
 
