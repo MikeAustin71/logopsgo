@@ -185,9 +185,9 @@ type CmdJob struct {
 	CmdArguments               CommandArgumentsArray `xml:"CmdArguments"`
 	IanaTimeZone               string
 	CmdJobTimeFormat           string
-	CmdJobStartValue           time.Time
+	CmdJobStartTimeValue       time.Time
 	CmdJobStartUTC             time.Time
-	CmdJobEndValue             time.Time
+	CmdJobEndTimeValue         time.Time
 	CmdJobEndUTC               time.Time
 	CmdJobDuration             time.Duration
 	CmdJobElapsedTime          string
@@ -278,7 +278,7 @@ func (job *CmdJob) SetCmdJobActualStartTime(parent []ErrBaseInfo) SpecErr {
 		return  se.New(s, err, true, 1401)
 	}
 
-	job.CmdJobStartValue = tzu.TimeOut
+	job.CmdJobStartTimeValue = tzu.TimeOut
 
 	return se.SignalNoErrors()
 }
@@ -302,7 +302,7 @@ func (job *CmdJob) SetCmdJobActualEndTime(parent []ErrBaseInfo) SpecErr {
 		return  se.New(s, err, true, 1401)
 	}
 
-	job.CmdJobEndValue = tzu.TimeOut
+	job.CmdJobEndTimeValue = tzu.TimeOut
 
 	dutil := DurationUtility{}
 

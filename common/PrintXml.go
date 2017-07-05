@@ -65,7 +65,7 @@ func PrintCmdJobs(cmdJobs CommandJobArray) {
 		fmt.Println("DelayCmdStartSeconds:", cmdJobs.CmdJobArray[i].DelayCmdStartSeconds)
 		fmt.Println("DelayStartCmdDateTime:", cmdJobs.CmdJobArray[i].DelayStartCmdDateTime)
 		fmt.Println("CommandTimeOutInSeconds:", cmdJobs.CmdJobArray[i].CommandTimeOutInSeconds)
-		fmt.Println("Job Start Time:", cmdJobs.CmdJobArray[i].CmdJobStartValue.Format(cmdJobs.CmdJobArray[i].CmdJobTimeFormat))
+		fmt.Println("Job Start Time:", cmdJobs.CmdJobArray[i].CmdJobStartTimeValue.Format(cmdJobs.CmdJobArray[i].CmdJobTimeFormat))
 		fmt.Println("Job Time Zone:", cmdJobs.CmdJobArray[i].IanaTimeZone)
 		fmt.Println("+++++++++++++++++++++++++++++++++++++++")
 		fmt.Println("      Combined Exe Command             ")

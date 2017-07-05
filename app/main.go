@@ -27,13 +27,26 @@ func main() {
 
 	lg := common.LogJobGroup{}
 	parent := common.ErrBaseInfo{}.GetNewParentInfo(srcFileNameLogOpsMain, "main", errBlockNoLogOpsMain)
-	StartUp(&lg, parent)
+	cmds, sea := startUp(&lg, parent)
+
+	if sea.IsErr {
+		panic(sea)
+	}
+
+	for _, cmdJob := range cmds.CmdJobs.CmdJobArray {
+
+		se2 := executeJob(cmdJob, &lg, parent)
+
+		if se2.IsErr && lg.KillAllJobsOnFirstError {
+			panic(se2)
+		}
+	}
 
 }
 
-func StartUp(lg *common.LogJobGroup,parent []common.ErrBaseInfo) common.SpecErr {
+func startUp(lg *common.LogJobGroup,parent []common.ErrBaseInfo) (common.CommandBatch, common.SpecErr) {
 
-	se := baseLogErrConfigMain(parent, "StartUp")
+	se := baseLogErrConfigMain(parent, "startUp")
 
 	parms := common.StartupParameters{}
 
@@ -64,6 +77,7 @@ func StartUp(lg *common.LogJobGroup,parent []common.ErrBaseInfo) common.SpecErr 
 	}
 
 	parms.IanaTimeZone = cmds.CmdJobsHdr.IanaTimeZone
+	parms.KillAllJobsOnFirstError = cmds.CmdJobsHdr.KillAllJobsOnFirstError
 	parms.StartTimeUTC = cmds.CmdJobsHdr.CmdBatchStartUTC
 	parms.StartTime = cmds.CmdJobsHdr.CmdBatchStartTime
 	dtf := common.DateTimeFormatUtility{}
@@ -80,8 +94,6 @@ func StartUp(lg *common.LogJobGroup,parent []common.ErrBaseInfo) common.SpecErr 
 	parms.CommandFileName = cmdFileParms.FileNameExt
 	parms.NoOfJobs = cmds.CmdJobsHdr.NoOfCmdJobs
 	parms.Dtfmt = &dtf
-
-
 
 	sea = lg.New(parms, parent)
 
@@ -105,6 +117,26 @@ func StartUp(lg *common.LogJobGroup,parent []common.ErrBaseInfo) common.SpecErr 
 
 	fmt.Println("AppLogBanner1", lg.Banner1)
 
+	return cmds, se.SignalNoErrors()
+}
+
+
+func executeJob(job common.CmdJob, logOps *common.LogJobGroup, parent []common.ErrBaseInfo) common.SpecErr {
+
+	se := baseLogErrConfigMain(parent, "executeJob")
+	thisParentInfo := se.AddBaseToParentInfo()
+	job.SetCmdJobActualStartTime(thisParentInfo)
+
+	sea := logOps.WriteCmdJobHeaderToLog(job, thisParentInfo)
+
+	if sea.IsErr {
+		return sea
+	}
+
+	time.Sleep(time.Duration(5) * time.Second)
+
+	job.SetCmdJobActualEndTime(thisParentInfo)
+
 
 	return se.SignalNoErrors()
 }
@@ -118,3 +150,4 @@ func baseLogErrConfigMain(parent []common.ErrBaseInfo, funcName string) common.S
 
 	return common.SpecErr{}.InitializeBaseInfo(parent, bi)
 }
+
