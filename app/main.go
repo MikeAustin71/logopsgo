@@ -9,12 +9,22 @@ import (
 const (
 	srcFileNameLogOpsMain = "main.go"
 	errBlockNoLogOpsMain  = int64(1000000)
-	cmdPathFileName = "./app/cmdrXCmds.xml"
-	appPathFileName = "./app/cmdrX.exe"
-	appLogPathOnly = "./app/cmdrX/alog.log"
+	cmdPathFileName = "D:/go/work/src/MikeAustin71/logopsgo/app/cmdrXCmds.xml"
+	appPathFileName = "D:/go/work/src/MikeAustin71/logopsgo/app/cmdrX.exe"
+	appLogPathOnly = "D:/go/work/src/MikeAustin71/logopsgo/app/cmdrX/alog.log"
 )
 
 func main() {
+
+	fh := common.FileHelper{}
+	s, _ := fh.GetCurrentDir()
+
+	fmt.Println("Current Directory: ", s)
+
+	s, _ = fh.GetExecutablePathFileName()
+
+	fmt.Println("Executable Directory: ", s)
+
 
 	parent := common.ErrBaseInfo{}.GetNewParentInfo(srcFileNameLogOpsMain, "main", errBlockNoLogOpsMain)
 	StartUp(parent)
@@ -94,6 +104,7 @@ func StartUp(parent []common.ErrBaseInfo) common.SpecErr {
 	fmt.Println("AppLogPathFileName", lg.AppLogPathFileName)
 
 	fmt.Println("AppLogBanner1", lg.Banner1)
+
 
 	return se.SignalNoErrors()
 }

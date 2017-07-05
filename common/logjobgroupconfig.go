@@ -282,15 +282,15 @@ func (logOps *LogJobGroup) writeFileGroupHeaderToLog(parent []ErrBaseInfo) SpecE
 
 	logOps.writeFileStr(logOps.Banner2, thisParentInfo)
 
-	str = fmt.Sprintf("  Job Execution Start Time UTC: %v \n", dt.GetDateTimeEverything(logOps.StartTimeUTC))
+	str = fmt.Sprintf("  Job Group Start Time UTC: %v \n", dt.GetDateTimeEverything(logOps.StartTimeUTC))
 
 	logOps.writeTabFileStr(str, 0, parent)
 
-	str = fmt.Sprintf("Job Execution Start Time Local: %v \n", dt.GetDateTimeEverything(logOps.StartTime))
+	str = fmt.Sprintf("Job Group Start Time Local: %v \n", dt.GetDateTimeEverything(logOps.StartTime))
 
 	logOps.writeTabFileStr(str, 0, parent)
 
-	str = fmt.Sprintf(" Job Execution Local Time Zone: %v \n", logOps.IanaTimeZone)
+	str = fmt.Sprintf(" Job Group Local Time Zone: %v \n", logOps.IanaTimeZone)
 
 	logOps.writeTabFileStr(str, 0, parent)
 
@@ -438,6 +438,7 @@ func (logOps *LogJobGroup) WriteJobGroupFooterToLog(cmds CommandBatch, parent []
 	logOps.writeFileStr("\n", thisParentInfo)
 	stx = "Job Group Execution Times:\n"
 	logOps.writeTabFileStr(stx, 1, thisParentInfo)
+	logOps.writeFileStr(logOps.Banner4, thisParentInfo)
 	str = dt.GetDateTimeNanoSecText(logOps.StartTimeUTC)
 	stx = fmt.Sprintf("JobGroup   Start Time UTC: %v \n", str)
 	logOps.writeTabFileStr(stx, 1, thisParentInfo)
