@@ -5,8 +5,8 @@
                Execution Job Group Command File: cmdrXCmds.xml 
                         Starting Execution of 2 Jobs. 
 ================================================================================
-  Job Group Start Time UTC: Friday July 7, 2017 20:20:53.632103300 +0000 UTC 
-Job Group Start Time Local: Friday July 7, 2017 15:20:53.632103300 -0500 CDT 
+  Job Group Start Time UTC: Friday July 7, 2017 20:50:53.582300300 +0000 UTC 
+Job Group Start Time Local: Friday July 7, 2017 15:50:53.582300300 -0500 CDT 
  Job Group Local Time Zone: America/Chicago 
 ================================================================================
 
@@ -17,7 +17,7 @@ Job Group Start Time Local: Friday July 7, 2017 15:20:53.632103300 -0500 CDT
 ********************************************************************************
 
   This Log File:
-    D:\go\work\src\MikeAustin71\logopsgo\app\cmdrX\cmdrX_20170707152053.log
+    D:\go\work\src\MikeAustin71\logopsgo\app\cmdrX\cmdrX_20170707155053.log
 ********************************************************************************
 
   Base Start Directory:
@@ -55,10 +55,8 @@ Job Group Start Time Local: Friday July 7, 2017 15:20:53.632103300 -0500 CDT
 
                             Command Job Start Times
 ********************************************************************************
-    Cmd Job Start Time UTC: 2017-07-07 20:21:05.789322700 +0000 UTC
-
-  Cmd Job Start Time Local: 2017-07-07 15:21:05.789322700 -0500 CDT
-
+    Cmd Job Start Time UTC: 2017-07-07 20:51:05.646619300 +0000 UTC
+  Cmd Job Start Time Local: 2017-07-07 15:51:05.646619300 -0500 CDT
    Cmd Job Local Time Zone: America/Chicago
 ********************************************************************************
 ================================================================================
@@ -76,8 +74,8 @@ Job Group Start Time Local: Friday July 7, 2017 15:20:53.632103300 -0500 CDT
   Command Message Number: 1
   Command Message Type: INFO
   Command Message Level: INFO
-    Command Message Time UTC: 2017-07-07 20:21:10.791476900 +0000 UTC
-  Command Message Time Local: 2017-07-07 15:21:10.791476900 -0500 CDT
+    Command Message Time UTC: 2017-07-07 20:51:10.647936800 +0000 UTC
+  Command Message Time Local: 2017-07-07 15:51:10.647936800 -0500 CDT
    Command Message Time Zone: America/Chicago
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   Command Message:
@@ -87,7 +85,7 @@ Job Group Start Time Local: Friday July 7, 2017 15:20:53.632103300 -0500 CDT
 &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
 
 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-                         End Of Job Execution Message
+                    End Of Job Execution Message Number: 1
 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 
@@ -115,18 +113,14 @@ Job Group Start Time Local: Friday July 7, 2017 15:20:53.632103300 -0500 CDT
                           Command Job Execution Times
   UTC Start\End Times:
 --------------------------------------------------------------------------------
-   Cmd Job Start Time UTC: 2017-07-07 20:21:05.789322700 +0000 UTC
-
-     Cmd Job End Time UTC: 2017-07-07 20:21:10.792475900 +0000 UTC
-
+   Cmd Job Start Time UTC: 2017-07-07 20:51:05.646619300 +0000 UTC
+     Cmd Job End Time UTC: 2017-07-07 20:51:10.648940700 +0000 UTC
 --------------------------------------------------------------------------------
 
   Local Start\End Times:
 --------------------------------------------------------------------------------
-  Cmd Job Start Time Local: 2017-07-07 15:21:05.789322700 -0500 CDT
-
-    Cmd Job End Time Local: 2017-07-07 15:21:10.792475900 -0500 CDT
-
+  Cmd Job Start Time Local: 2017-07-07 15:51:05.646619300 -0500 CDT
+    Cmd Job End Time Local: 2017-07-07 15:51:10.648940700 -0500 CDT
    Cmd Job Local Time Zone: America/Chicago
 --------------------------------------------------------------------------------
 
@@ -134,7 +128,7 @@ Job Group Start Time Local: Friday July 7, 2017 15:20:53.632103300 -0500 CDT
 
   Cmd Job Execution Elapsed Time:
 &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
-    0-Hours 0-Minutes 5-Seconds 3-Milliseconds 153-Microseconds 200-Nanoseconds
+    0-Hours 0-Minutes 5-Seconds 2-Milliseconds 321-Microseconds 400-Nanoseconds
 &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
 
 
@@ -174,10 +168,8 @@ Job Group Start Time Local: Friday July 7, 2017 15:20:53.632103300 -0500 CDT
 
                             Command Job Start Times
 ********************************************************************************
-    Cmd Job Start Time UTC: 2017-07-07 20:21:10.792981700 +0000 UTC
-
-  Cmd Job Start Time Local: 2017-07-07 15:21:10.792981700 -0500 CDT
-
+    Cmd Job Start Time UTC: 2017-07-07 20:51:10.649439600 +0000 UTC
+  Cmd Job Start Time Local: 2017-07-07 15:51:10.649439600 -0500 CDT
    Cmd Job Local Time Zone: America/Chicago
 ********************************************************************************
 ================================================================================
@@ -195,8 +187,8 @@ Job Group Start Time Local: Friday July 7, 2017 15:20:53.632103300 -0500 CDT
   Command Message Number: 1
   Command Message Type: INFO
   Command Message Level: INFO
-    Command Message Time UTC: 2017-07-07 20:21:15.794609900 +0000 UTC
-  Command Message Time Local: 2017-07-07 15:21:15.794609900 -0500 CDT
+    Command Message Time UTC: 2017-07-07 20:51:15.650848800 +0000 UTC
+  Command Message Time Local: 2017-07-07 15:51:15.650848800 -0500 CDT
    Command Message Time Zone: America/Chicago
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
   Command Message:
@@ -206,7 +198,7 @@ Job Group Start Time Local: Friday July 7, 2017 15:20:53.632103300 -0500 CDT
 &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
 
 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-                         End Of Job Execution Message
+                    End Of Job Execution Message Number: 1
 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 
@@ -234,18 +226,14 @@ Job Group Start Time Local: Friday July 7, 2017 15:20:53.632103300 -0500 CDT
                           Command Job Execution Times
   UTC Start\End Times:
 --------------------------------------------------------------------------------
-   Cmd Job Start Time UTC: 2017-07-07 20:21:10.792981700 +0000 UTC
-
-     Cmd Job End Time UTC: 2017-07-07 20:21:15.795626600 +0000 UTC
-
+   Cmd Job Start Time UTC: 2017-07-07 20:51:10.649439600 +0000 UTC
+     Cmd Job End Time UTC: 2017-07-07 20:51:15.651349500 +0000 UTC
 --------------------------------------------------------------------------------
 
   Local Start\End Times:
 --------------------------------------------------------------------------------
-  Cmd Job Start Time Local: 2017-07-07 15:21:10.792981700 -0500 CDT
-
-    Cmd Job End Time Local: 2017-07-07 15:21:15.795626600 -0500 CDT
-
+  Cmd Job Start Time Local: 2017-07-07 15:51:10.649439600 -0500 CDT
+    Cmd Job End Time Local: 2017-07-07 15:51:15.651349500 -0500 CDT
    Cmd Job Local Time Zone: America/Chicago
 --------------------------------------------------------------------------------
 
@@ -253,7 +241,7 @@ Job Group Start Time Local: Friday July 7, 2017 15:20:53.632103300 -0500 CDT
 
   Cmd Job Execution Elapsed Time:
 &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
-    0-Hours 0-Minutes 5-Seconds 2-Milliseconds 644-Microseconds 900-Nanoseconds
+    0-Hours 0-Minutes 5-Seconds 1-Milliseconds 909-Microseconds 900-Nanoseconds
 &&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
 
 
@@ -283,11 +271,11 @@ Job Group Start Time Local: Friday July 7, 2017 15:20:53.632103300 -0500 CDT
 
   Job Group Execution Times:
 --------------------------------------------------------------------------------
-  JobGroup   Start Time UTC: 2017-07-07 20:20:53.632103300 
-  JobGroup     End Time UTC: 2017-07-07 20:21:05.788340500 
+  JobGroup   Start Time UTC: Friday July 7, 2017 20:50:53.582300300 +0000 UTC 
+  JobGroup     End Time UTC: Friday July 7, 2017 20:51:05.646106400 +0000 UTC 
 --------------------------------------------------------------------------------
-  JobGroup Start Time Local: 2017-07-07 15:20:53.632103300 
-  JobGroup   End Time Local: 2017-07-07 15:21:05.788340500 
+  JobGroup Start Time Local: Friday July 7, 2017 15:50:53.582300300 -0500 CDT 
+  JobGroup   End Time Local: Friday July 7, 2017 15:51:05.646106400 -0500 CDT 
 --------------------------------------------------------------------------------
   JobGroup  Local Time Zone: America/Chicago 
 --------------------------------------------------------------------------------
@@ -295,9 +283,10 @@ Job Group Start Time Local: Friday July 7, 2017 15:20:53.632103300 -0500 CDT
 ********************************************************************************
   JobGroup Elapsed Time:
 --------------------------------------------------------------------------------
-  0-Hours 0-Minutes 12-Seconds 156-Milliseconds 237-Microseconds 200-Nanoseconds
+  0-Hours 0-Minutes 12-Seconds 63-Milliseconds 806-Microseconds 100-Nanoseconds
 --------------------------------------------------------------------------------
 ********************************************************************************
 
 ################################################################################
+                          End of Job Group Execution
 ################################################################################

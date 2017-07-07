@@ -447,23 +447,23 @@ func (logOps *LogJobGroup) WriteJobGroupFooterToLog(cmds CommandBatch, parent []
 	stx = "Job Group Execution Times:\n"
 	logOps.writeTabFileStr(stx, 1, thisParentInfo)
 	logOps.writeFileStr(logOps.Banner4, thisParentInfo)
-	str = dt.GetDateTimeNanoSecText(logOps.StartTimeUTC)
+	str = dt.GetDateTimeEverything(logOps.StartTimeUTC)
 	stx = fmt.Sprintf("JobGroup   Start Time UTC: %v \n", str)
 	logOps.writeTabFileStr(stx, 1, thisParentInfo)
 
 	logOps.EndTimeUTC = cmds.CmdJobsHdr.CmdBatchEndUTC
 	logOps.EndTime = cmds.CmdJobsHdr.CmdBatchEndTime
-	str = dt.GetDateTimeNanoSecText(logOps.EndTimeUTC)
+	str = dt.GetDateTimeEverything(logOps.EndTimeUTC)
 	stx = fmt.Sprintf("JobGroup     End Time UTC: %v \n", str)
 	logOps.writeTabFileStr(stx, 1, thisParentInfo)
 
 	logOps.writeFileStr(logOps.Banner4, thisParentInfo)
 
-	str = dt.GetDateTimeNanoSecText(logOps.StartTime)
+	str = dt.GetDateTimeEverything(logOps.StartTime)
 	stx = fmt.Sprintf("JobGroup Start Time Local: %v \n", str)
 	logOps.writeTabFileStr(stx, 1, thisParentInfo)
 
-	str = dt.GetDateTimeNanoSecText(logOps.EndTime)
+	str = dt.GetDateTimeEverything(logOps.EndTime)
 	stx = fmt.Sprintf("JobGroup   End Time Local: %v \n", str)
 	logOps.writeTabFileStr(stx, 1, thisParentInfo)
 
@@ -485,6 +485,17 @@ func (logOps *LogJobGroup) WriteJobGroupFooterToLog(cmds CommandBatch, parent []
 	logOps.writeFileStr(logOps.Banner3, thisParentInfo)
 	logOps.writeFileStr("\n", thisParentInfo)
 	logOps.writeFileStr(logOps.Banner1, thisParentInfo)
+
+	str = "End of Job Group Execution\n"
+	stx, err = su.StrCenterInStr(str, logOps.BannerLen)
+	if err != nil {
+		s := "StrCenterInStr threw error on End of Job Group Execution"
+		isPanic = true
+		return se.New(s, err, isPanic, 805)
+	}
+
+	logOps.writeFileStr(stx, thisParentInfo)
+
 	logOps.writeFileStr(logOps.Banner1, thisParentInfo)
 
 	// Signal Successful Completion
@@ -531,7 +542,6 @@ func (logOps *LogJobGroup) WriteCmdJobHeaderToLog(job *CmdJob, parent []ErrBaseI
 	}
 
 	logOps.writeFileStr(stx, thisParentInfo)
-
 
 	logOps.writeFileStr(logOps.Banner2, thisParentInfo)
 
@@ -580,11 +590,9 @@ func (logOps *LogJobGroup) WriteCmdJobHeaderToLog(job *CmdJob, parent []ErrBaseI
 
 	str = fmt.Sprintf("  Cmd Job Start Time UTC: %v\n", job.CmdJobStartUTC.Format(job.CmdJobTimeFormat))
 	logOps.writeTabFileStr(str, 1, thisParentInfo)
-	logOps.writeFileStr("\n", thisParentInfo)
 
 	str = fmt.Sprintf("Cmd Job Start Time Local: %v\n", job.CmdJobStartTimeValue.Format(job.CmdJobTimeFormat))
 	logOps.writeTabFileStr(str, 1, thisParentInfo)
-	logOps.writeFileStr("\n", thisParentInfo)
 
 	str = fmt.Sprintf(" Cmd Job Local Time Zone: %v\n", job.IanaTimeZone)
 	logOps.writeTabFileStr(str, 1, thisParentInfo)
@@ -670,11 +678,9 @@ func (logOps *LogJobGroup) WriteCmdJobFooterToLog(job *CmdJob, parent []ErrBaseI
 
 	str = fmt.Sprintf(" Cmd Job Start Time UTC: %v\n", job.CmdJobStartUTC.Format(job.CmdJobTimeFormat))
 	logOps.writeTabFileStr(str, 1, thisParentInfo)
-	logOps.writeFileStr("\n", thisParentInfo)
 
 	str = fmt.Sprintf("   Cmd Job End Time UTC: %v\n", job.CmdJobEndUTC.Format(job.CmdJobTimeFormat))
 	logOps.writeTabFileStr(str, 1, thisParentInfo)
-	logOps.writeFileStr("\n", thisParentInfo)
 
 	logOps.writeFileStr(logOps.Banner4, thisParentInfo)
 
@@ -686,13 +692,9 @@ func (logOps *LogJobGroup) WriteCmdJobFooterToLog(job *CmdJob, parent []ErrBaseI
 
 	str = fmt.Sprintf("Cmd Job Start Time Local: %v\n", job.CmdJobStartTimeValue.Format(job.CmdJobTimeFormat))
 	logOps.writeTabFileStr(str, 1, thisParentInfo)
-	logOps.writeFileStr("\n", thisParentInfo)
-
 
 	str = fmt.Sprintf("  Cmd Job End Time Local: %v\n", job.CmdJobEndTimeValue.Format(job.CmdJobTimeFormat))
 	logOps.writeTabFileStr(str, 1, thisParentInfo)
-	logOps.writeFileStr("\n", thisParentInfo)
-
 
 	str = fmt.Sprintf(" Cmd Job Local Time Zone: %v\n", job.IanaTimeZone)
 	logOps.writeTabFileStr(str, 1, thisParentInfo)
@@ -807,7 +809,7 @@ func (logOps *LogJobGroup) WriteOpsMsgToLog(opsMsg OpsMsgDto, job *CmdJob, paren
 	}
 
 	logOps.writeFileStr(logOps.Banner7, thisParentInfo)
-	str = "End Of Job Execution Message\n"
+	str = fmt.Sprintf("End Of Job Execution Message Number: %v\n",	job.CmdJobNoOfMsgs)
 	stx, err = su.StrCenterInStr(str, logOps.BannerLen)
 	if err != nil {
 		s := "StrCenterInStr threw error on Command Job Execution Message"
