@@ -37,11 +37,31 @@ func main() {
 
 		se2 := executeJob(&cmdJob, &lg, parent)
 
+		if cmdJob.CmdJobIsCompleted && !se2.IsErr {
+			lg.NoOfJobsCompleted++
+		}
+
+		lg.NoOfJobGroupMsgs += cmdJob.CmdJobNoOfMsgs
+
 		if se2.IsErr && lg.KillAllJobsOnFirstError {
+			doLogWrapUp(&lg, cmds, parent)
 			panic(se2)
 		}
 	}
 
+	doLogWrapUp(&lg, cmds, parent)
+}
+
+func doLogWrapUp(lg *common.LogJobGroup, cmds common.CommandBatch, parent []common.ErrBaseInfo) common.SpecErr {
+
+	se := lg.WriteJobGroupFooterToLog(cmds, parent)
+
+
+	fmt.Println("AppLogPathFileName", lg.AppLogPathFileName)
+
+	fmt.Println("AppLogBanner1", lg.Banner1)
+
+	return se
 }
 
 func startUp(lg *common.LogJobGroup,parent []common.ErrBaseInfo) (common.CommandBatch, common.SpecErr) {
@@ -111,11 +131,6 @@ func startUp(lg *common.LogJobGroup,parent []common.ErrBaseInfo) (common.Command
 		panic(sea)
 	}
 
-	lg.WriteJobGroupFooterToLog(cmds, parent)
-
-	fmt.Println("AppLogPathFileName", lg.AppLogPathFileName)
-
-	fmt.Println("AppLogBanner1", lg.Banner1)
 
 	return cmds, se.SignalNoErrors()
 }

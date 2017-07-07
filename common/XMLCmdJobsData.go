@@ -55,6 +55,9 @@ func (cmdBatch *CommandBatch) assembleCmdElements() {
 
 		lCmdArgs := len(job.CmdArguments.CmdArgs)
 
+		// Set Job No.
+		job.CmdJobNo = i + 1
+
 		// sync time zones
 		job.IanaTimeZone = cmdBatch.CmdJobsHdr.IanaTimeZone
 
@@ -158,7 +161,6 @@ type CommandJobsHdr struct {
 	CmdBatchEndUTC          time.Time
 	CmdBatchDuration        time.Duration
 	CmdBatchElapsedTime     string
-	CmdBatchNoOfMsgs				int
 }
 
 // CommandJobArray - Holds individual
@@ -171,6 +173,7 @@ type CommandJobArray struct {
 type CmdJob struct {
 	CmdDisplayName             string `xml:"CommandDisplayName"`
 	CmdDescription             string `xml:"CommandDescription"`
+	CmdJobNo									 int
 	CmdType                    string `xml:"CommandType"`
 	ExeCmdInDir                string `xml:"ExecuteCmdInDir"`
 	DelayCmdStartSeconds       string `xml:"DelayCmdStartSeconds"`
@@ -193,6 +196,7 @@ type CmdJob struct {
 	CmdJobDuration             time.Duration
 	CmdJobElapsedTime          string
 	CmdJobNoOfMsgs						 int
+	CmdJobIsCompleted					 bool
 }
 
 // SetDelayCmdStartTime - Sets the date time at which the command

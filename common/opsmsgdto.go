@@ -1,13 +1,18 @@
 package common
 
+import "time"
+
 // OpsMsgDto - Data Transfer Object
 // containing information about an
-// operations message
+// operations Message
 type OpsMsgDto struct {
-	message  []string
-	msgType  LogMsgType
-	msgLevel LogLevel
-	specErr  SpecErr
+	Message  []string
+	MsgType  LogMsgType
+	MsgLevel LogLevel
+	MsgTimeUTC time.Time
+	MsgTimeLocal time.Time
+	LocalTimeZone string
+	ErrDto   SpecErr
 }
 
 func (opsMsg *OpsMsgDto) NewSpecErr(se SpecErr) OpsMsgDto {
@@ -15,22 +20,22 @@ func (opsMsg *OpsMsgDto) NewSpecErr(se SpecErr) OpsMsgDto {
 	om := OpsMsgDto{}
 
 	if se.IsPanic {
-		om.msgType = LogERRORMSGTYPE
-		om.msgLevel = LogFATAL
-		opsMsg.specErr = se
+		om.MsgType = LogERRORMSGTYPE
+		om.MsgLevel = LogFATAL
+		opsMsg.ErrDto = se
 
 	} else if se.IsErr {
-		om.msgType = LogERRORMSGTYPE
-		om.msgLevel = LogDEBUG
-		opsMsg.specErr = se
+		om.MsgType = LogERRORMSGTYPE
+		om.MsgLevel = LogDEBUG
+		opsMsg.ErrDto = se
 
 	} else {
-		om.msgType = LogINFOMSGTYPE
-		om.msgLevel = LogINFO
-		opsMsg.specErr = se
+		om.MsgType = LogINFOMSGTYPE
+		om.MsgLevel = LogINFO
+		opsMsg.ErrDto = se
 	}
 
-	opsMsg.message = append(opsMsg.message, se.Error())
+	opsMsg.Message = append(opsMsg.Message, se.Error())
 
 	return om
 }
@@ -38,10 +43,20 @@ func (opsMsg *OpsMsgDto) NewSpecErr(se SpecErr) OpsMsgDto {
 func(opsMsg *OpsMsgDto) NewInfoMsg(msg string) OpsMsgDto {
 
 	om := OpsMsgDto{}
-	om.msgType = LogINFOMSGTYPE
-	om.msgLevel = LogINFO
+	om.MsgType = LogINFOMSGTYPE
+	om.MsgLevel = LogINFO
 
-	opsMsg.message = append(opsMsg.message, msg)
+	om.Message = append(om.Message, msg)
 
 	return om
+}
+
+func(opsMsg *OpsMsgDto)SetTime(localTimeZone string){
+
+	opsMsg.MsgTimeUTC = time.Now().UTC()
+	opsMsg.LocalTimeZone = localTimeZone
+	tz := TimeZoneUtility{}
+	tzLocal, _ := tz.ConvertTz(opsMsg.MsgTimeUTC, opsMsg.LocalTimeZone)
+	opsMsg.MsgTimeLocal = tzLocal.TimeOut
+
 }
