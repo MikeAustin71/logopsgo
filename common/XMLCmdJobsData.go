@@ -158,6 +158,7 @@ type CommandJobsHdr struct {
 	CmdBatchEndUTC          time.Time
 	CmdBatchDuration        time.Duration
 	CmdBatchElapsedTime     string
+	CmdBatchNoOfMsgs				int
 }
 
 // CommandJobArray - Holds individual
@@ -191,6 +192,7 @@ type CmdJob struct {
 	CmdJobEndUTC               time.Time
 	CmdJobDuration             time.Duration
 	CmdJobElapsedTime          string
+	CmdJobNoOfMsgs						 int
 }
 
 // SetDelayCmdStartTime - Sets the date time at which the command

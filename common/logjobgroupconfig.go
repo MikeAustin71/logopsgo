@@ -41,6 +41,9 @@ type LogJobGroup struct {
 	Banner2                 string
 	Banner3                 string
 	Banner4                 string
+	Banner5                 string
+	Banner6                 string
+	Banner7                 string
 	BannerLen               int
 	LeftTab                 string
 	BaseStartDir            string
@@ -112,6 +115,12 @@ func (logOps *LogJobGroup) New(startParams StartupParameters,
 	logOps.Banner3 = strings.Repeat("*", logOps.BannerLen) + "\n"
 
 	logOps.Banner4 = strings.Repeat("-", logOps.BannerLen) + "\n"
+
+	logOps.Banner5 = strings.Repeat("!", logOps.BannerLen) + "\n"
+
+	logOps.Banner6 = strings.Repeat("&", logOps.BannerLen) + "\n"
+
+	logOps.Banner7 = strings.Repeat("+", logOps.BannerLen) + "\n"
 
 	logOps.LeftTab = strings.Repeat(" ", 2)
 
@@ -483,7 +492,7 @@ func (logOps *LogJobGroup) WriteJobGroupFooterToLog(cmds CommandBatch, parent []
 	return se.SignalNoErrors()
 }
 
-func (logOps *LogJobGroup) WriteCmdJobHeaderToLog(job CmdJob, parent []ErrBaseInfo) SpecErr {
+func (logOps *LogJobGroup) WriteCmdJobHeaderToLog(job *CmdJob, parent []ErrBaseInfo) SpecErr {
 
 	se := logOps.baseLogErrConfig(parent, "WriteCmdJobHeaderToLog()")
 	thisParentInfo := se.AddBaseToParentInfo()
@@ -518,32 +527,32 @@ func (logOps *LogJobGroup) WriteCmdJobHeaderToLog(job CmdJob, parent []ErrBaseIn
 	logOps.writeFileStr("\n", thisParentInfo)
 	logOps.writeFileStr(logOps.Banner3, thisParentInfo)
 	str = fmt.Sprintf("Cmd Job Description: %v\n", job.CmdDescription)
-	logOps.writeTabFileStr(str,1, thisParentInfo)
+	logOps.writeTabFileStr(str, 1, thisParentInfo)
 	logOps.writeFileStr(logOps.Banner3, thisParentInfo)
 	logOps.writeFileStr(logOps.Banner4, thisParentInfo)
 	str = fmt.Sprintf("Cmd Type: %v\n", job.CmdDescription)
-	logOps.writeTabFileStr(str,1, thisParentInfo)
+	logOps.writeTabFileStr(str, 1, thisParentInfo)
 
 	str = fmt.Sprintf("Execute Cmd In Directory: %v\n", job.ExeCmdInDir)
-	logOps.writeTabFileStr(str,1, thisParentInfo)
+	logOps.writeTabFileStr(str, 1, thisParentInfo)
 
 	str = fmt.Sprintf("Delay Cmd Start Seconds: %v\n", job.DelayCmdStartSeconds)
-	logOps.writeTabFileStr(str,1, thisParentInfo)
+	logOps.writeTabFileStr(str, 1, thisParentInfo)
 
 	str = fmt.Sprintf("Delay Cmd Start Target Time: %v\n", job.DelayStartCmdDateTime)
-	logOps.writeTabFileStr(str,1, thisParentInfo)
+	logOps.writeTabFileStr(str, 1, thisParentInfo)
 
 	str = fmt.Sprintf("Delay Cmd Time Out in Seconds: %v\n", job.CommandTimeOutInSeconds)
-	logOps.writeTabFileStr(str,1, thisParentInfo)
+	logOps.writeTabFileStr(str, 1, thisParentInfo)
 	logOps.writeFileStr(logOps.Banner4, thisParentInfo)
 	logOps.writeFileStr("\n", thisParentInfo)
 
 	logOps.writeFileStr(logOps.Banner3, thisParentInfo)
 	str = fmt.Sprintf("Execution Command: %v\n", job.ExeCommand)
-	logOps.writeTabFileStr(str,1, thisParentInfo)
+	logOps.writeTabFileStr(str, 1, thisParentInfo)
 
 	str = fmt.Sprintf("Command Arguments: %v\n", job.CombinedArguments)
-	logOps.writeTabFileStr(str,1, thisParentInfo)
+	logOps.writeTabFileStr(str, 1, thisParentInfo)
 	logOps.writeFileStr(logOps.Banner3, thisParentInfo)
 
 	logOps.writeFileStr("\n", thisParentInfo)
@@ -561,15 +570,15 @@ func (logOps *LogJobGroup) WriteCmdJobHeaderToLog(job CmdJob, parent []ErrBaseIn
 	logOps.writeFileStr(logOps.Banner3, thisParentInfo)
 
 	str = fmt.Sprintf("Command Job Start Time UTC: %v\n", job.CmdJobStartUTC.Format(job.CmdJobTimeFormat))
-	logOps.writeTabFileStr(str,1, thisParentInfo)
+	logOps.writeTabFileStr(str, 1, thisParentInfo)
 	logOps.writeFileStr("\n", thisParentInfo)
 
 	str = fmt.Sprintf("Command Job Start Time Local: %v\n", job.CmdJobStartTimeValue.Format(job.CmdJobTimeFormat))
-	logOps.writeTabFileStr(str,1, thisParentInfo)
+	logOps.writeTabFileStr(str, 1, thisParentInfo)
 	logOps.writeFileStr("\n", thisParentInfo)
 
 	str = fmt.Sprintf("Command Job Local Time Zone: %v\n", job.IanaTimeZone)
-	logOps.writeTabFileStr(str,1, thisParentInfo)
+	logOps.writeTabFileStr(str, 1, thisParentInfo)
 	logOps.writeFileStr(logOps.Banner3, thisParentInfo)
 
 	logOps.writeFileStr(logOps.Banner2, thisParentInfo)
@@ -579,7 +588,190 @@ func (logOps *LogJobGroup) WriteCmdJobHeaderToLog(job CmdJob, parent []ErrBaseIn
 	return se.SignalNoErrors()
 }
 
+func (logOps *LogJobGroup) WriteCmdJobFooterToLog(job *CmdJob, parent []ErrBaseInfo) SpecErr {
 
+	se := logOps.baseLogErrConfig(parent, "WriteCmdJobHeaderToLog()")
+	thisParentInfo := se.AddBaseToParentInfo()
+	su := StringUtility{}
+	isPanic := false
+
+	logOps.writeFileStr("\n\n", thisParentInfo)
+	logOps.writeFileStr(logOps.Banner2, thisParentInfo)
+	logOps.writeFileStr(logOps.Banner2, thisParentInfo)
+	logOps.writeFileStr(logOps.Banner5, thisParentInfo)
+	str := "Completed Command Job Execution"
+	stx, err := su.StrCenterInStr(str, logOps.BannerLen)
+	if err != nil {
+		s := "StrCenterInStr threw error on Completed Command Job Execution"
+		isPanic = true
+		return se.New(s, err, isPanic, 2601)
+	}
+
+	logOps.writeFileStr(stx, thisParentInfo)
+	logOps.writeFileStr(logOps.Banner5, thisParentInfo)
+
+	str = fmt.Sprintf("Command Job Name: %v\n", job.CmdDisplayName)
+	stx, err = su.StrCenterInStr(str, logOps.BannerLen)
+	if err != nil {
+		s := "StrCenterInStr threw error on Completing Command Job Display Name"
+		isPanic = true
+		return se.New(s, err, isPanic, 2602)
+	}
+
+	logOps.writeFileStr(stx, thisParentInfo)
+
+	logOps.writeFileStr(logOps.Banner2, thisParentInfo)
+
+	logOps.writeFileStr("\n", thisParentInfo)
+	logOps.writeFileStr(logOps.Banner3, thisParentInfo)
+	str = fmt.Sprintf("Cmd Job Description: %v\n", job.CmdDescription)
+	logOps.writeTabFileStr(str, 1, thisParentInfo)
+	logOps.writeFileStr(logOps.Banner3, thisParentInfo)
+	logOps.writeFileStr(logOps.Banner4, thisParentInfo)
+
+	str = fmt.Sprintf("Execution Command: %v\n", job.ExeCommand)
+	logOps.writeTabFileStr(str, 1, thisParentInfo)
+
+	str = fmt.Sprintf("Command Arguments: %v\n", job.CombinedArguments)
+	logOps.writeTabFileStr(str, 1, thisParentInfo)
+	logOps.writeFileStr(logOps.Banner4, thisParentInfo)
+	logOps.writeFileStr("\n", thisParentInfo)
+	logOps.writeFileStr(logOps.Banner3, thisParentInfo)
+	logOps.writeFileStr(logOps.Banner3, thisParentInfo)
+	logOps.writeFileStr("\n", thisParentInfo)
+	str = "Command Job Execution Times"
+	stx, err = su.StrCenterInStr(str, logOps.BannerLen)
+	if err != nil {
+		s := "StrCenterInStr threw error on Command Job Execution Times"
+		isPanic = true
+		return se.New(s, err, isPanic, 2603)
+	}
+	logOps.writeFileStr(stx, thisParentInfo)
+	logOps.writeFileStr(logOps.Banner3, thisParentInfo)
+	logOps.writeFileStr("\n", thisParentInfo)
+	logOps.writeFileStr(logOps.Banner4, thisParentInfo)
+
+	str = fmt.Sprintf("Command Job Start Time UTC: %v\n", job.CmdJobStartUTC.Format(job.CmdJobTimeFormat))
+	logOps.writeTabFileStr(str, 1, thisParentInfo)
+	logOps.writeFileStr("\n", thisParentInfo)
+
+	str = fmt.Sprintf("Command Job Start Time Local: %v\n", job.CmdJobStartTimeValue.Format(job.CmdJobTimeFormat))
+	logOps.writeTabFileStr(str, 1, thisParentInfo)
+	logOps.writeFileStr("\n", thisParentInfo)
+
+	str = fmt.Sprintf("Command Job Local Time Zone: %v\n", job.IanaTimeZone)
+	logOps.writeTabFileStr(str, 1, thisParentInfo)
+	logOps.writeFileStr(logOps.Banner4, thisParentInfo)
+
+	logOps.writeFileStr("\n", thisParentInfo)
+
+	logOps.writeFileStr(logOps.Banner4, thisParentInfo)
+
+	str = fmt.Sprintf("Command Job End Time UTC: %v\n", job.CmdJobEndUTC.Format(job.CmdJobTimeFormat))
+	logOps.writeTabFileStr(str, 1, thisParentInfo)
+	logOps.writeFileStr("\n", thisParentInfo)
+
+	str = fmt.Sprintf("Command Job End Time Local: %v\n", job.CmdJobEndTimeValue.Format(job.CmdJobTimeFormat))
+	logOps.writeTabFileStr(str, 1, thisParentInfo)
+	logOps.writeFileStr("\n", thisParentInfo)
+
+	str = fmt.Sprintf("Command Job Local Time Zone: %v\n", job.IanaTimeZone)
+	logOps.writeTabFileStr(str, 1, thisParentInfo)
+	logOps.writeFileStr(logOps.Banner4, thisParentInfo)
+	logOps.writeFileStr("\n", thisParentInfo)
+	logOps.writeFileStr(logOps.Banner6, thisParentInfo)
+	logOps.writeFileStr(logOps.Banner6, thisParentInfo)
+	logOps.writeFileStr("\n", thisParentInfo)
+	str = "Command Job Execution Elapsed Time:\n"
+	logOps.writeTabFileStr(str, 1, thisParentInfo)
+	logOps.writeFileStr(logOps.Banner6, thisParentInfo)
+
+	str = fmt.Sprintf("%v\n", job.CmdJobElapsedTime)
+	logOps.writeTabFileStr(str, 2, thisParentInfo)
+	logOps.writeFileStr(logOps.Banner6, thisParentInfo)
+	logOps.writeFileStr("\n\n", thisParentInfo)
+	logOps.writeFileStr(logOps.Banner4, thisParentInfo)
+	str = fmt.Sprintf("Number of Messages: %v\n", job.CmdJobNoOfMsgs)
+	logOps.writeTabFileStr(str, 1, thisParentInfo)
+	logOps.writeFileStr(logOps.Banner4, thisParentInfo)
+	logOps.writeFileStr("\n", thisParentInfo)
+
+	logOps.writeFileStr(logOps.Banner2, thisParentInfo)
+	logOps.writeFileStr(logOps.Banner2, thisParentInfo)
+	logOps.writeFileStr("\n\n", thisParentInfo)
+
+	str = fmt.Sprintf("Command Job Start Time Local: %v\n", job.CmdJobStartTimeValue.Format(job.CmdJobTimeFormat))
+	logOps.writeTabFileStr(str, 1, thisParentInfo)
+	logOps.writeFileStr("\n", thisParentInfo)
+
+	return se.SignalNoErrors()
+
+}
+
+func (logOps *LogJobGroup) WriteOpsMsgToLog(opsMsg OpsMsgDto, job *CmdJob, parent []ErrBaseInfo) SpecErr {
+
+	job.CmdJobNoOfMsgs++
+
+	se := logOps.baseLogErrConfig(parent, "WriteOpsMsgToLog()")
+	thisParentInfo := se.AddBaseToParentInfo()
+	su := StringUtility{}
+	isPanic := false
+
+	logOps.writeFileStr("\n\n", thisParentInfo)
+	logOps.writeFileStr(logOps.Banner7, thisParentInfo)
+	logOps.writeFileStr(logOps.Banner7, thisParentInfo)
+
+	str := "Job Execution Message"
+	stx, err := su.StrCenterInStr(str, logOps.BannerLen)
+	if err != nil {
+		s := "StrCenterInStr threw error on Command Job Execution Message"
+		isPanic = true
+		return se.New(s, err, isPanic, 2701)
+	}
+
+	logOps.writeFileStr(stx, thisParentInfo)
+	logOps.writeFileStr(logOps.Banner5, thisParentInfo)
+	logOps.writeFileStr("\n", thisParentInfo)
+	str = fmt.Sprintf("Command Job Name: %v\n", job.CmdDisplayName)
+	logOps.writeTabFileStr(str, 1, thisParentInfo)
+	str = fmt.Sprintf("Command Message Number: %v\n", job.CmdJobNoOfMsgs)
+	logOps.writeTabFileStr(str, 1, thisParentInfo)
+
+	str = fmt.Sprintf("Command Message Type: %v\n", opsMsg.msgType)
+	logOps.writeTabFileStr(str, 1, thisParentInfo)
+
+	str = fmt.Sprintf("Command Message Level: %v\n", opsMsg.msgLevel)
+	logOps.writeTabFileStr(str, 1, thisParentInfo)
+	logOps.writeFileStr(logOps.Banner5, thisParentInfo)
+
+	lenMsgs := len(opsMsg.message)
+
+	for i := 0; i < lenMsgs; i++ {
+		if i == 0 {
+			str = "Command Message:"
+			logOps.writeFileStr(logOps.Banner6, thisParentInfo)
+			logOps.writeTabFileStr(str, 1, thisParentInfo)
+			logOps.writeFileStr(logOps.Banner6, thisParentInfo)
+			logOps.writeFileStr("\n", thisParentInfo)
+		}
+
+		str = opsMsg.message[i]
+		logOps.writeTabFileStr(str, 2, thisParentInfo)
+
+		if i == (lenMsgs - 1) {
+			logOps.writeFileStr("\n", thisParentInfo)
+			logOps.writeFileStr(logOps.Banner6, thisParentInfo)
+			logOps.writeFileStr("\n\n", thisParentInfo)
+		}
+
+	}
+
+	logOps.writeFileStr(logOps.Banner7, thisParentInfo)
+	logOps.writeFileStr(logOps.Banner7, thisParentInfo)
+	logOps.writeFileStr("\n\n", thisParentInfo)
+
+	return se.SignalNoErrors()
+}
 
 func (logOps *LogJobGroup) writeTabFileStr(s string, noOfTabs int, parent []ErrBaseInfo) {
 

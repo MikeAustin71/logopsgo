@@ -35,7 +35,7 @@ func main() {
 
 	for _, cmdJob := range cmds.CmdJobs.CmdJobArray {
 
-		se2 := executeJob(cmdJob, &lg, parent)
+		se2 := executeJob(&cmdJob, &lg, parent)
 
 		if se2.IsErr && lg.KillAllJobsOnFirstError {
 			panic(se2)
@@ -121,22 +121,32 @@ func startUp(lg *common.LogJobGroup,parent []common.ErrBaseInfo) (common.Command
 }
 
 
-func executeJob(job common.CmdJob, logOps *common.LogJobGroup, parent []common.ErrBaseInfo) common.SpecErr {
+func executeJob(job *common.CmdJob, logOps *common.LogJobGroup, parent []common.ErrBaseInfo) common.SpecErr {
 
 	se := baseLogErrConfigMain(parent, "executeJob")
+	opsMsg := common.OpsMsgDto{}
 	thisParentInfo := se.AddBaseToParentInfo()
 	job.SetCmdJobActualStartTime(thisParentInfo)
 
 	sea := logOps.WriteCmdJobHeaderToLog(job, thisParentInfo)
 
 	if sea.IsErr {
+		om := opsMsg.NewSpecErr(sea)
+		logOps.WriteOpsMsgToLog(om, job, thisParentInfo)
 		return sea
 	}
 
 	time.Sleep(time.Duration(5) * time.Second)
 
+	s := fmt.Sprintf("Completed Job: %v. No Errors!", job.CmdDisplayName)
+	om := opsMsg.NewInfoMsg(s)
+
+	logOps.WriteOpsMsgToLog(om, job, thisParentInfo)
+
 	job.SetCmdJobActualEndTime(thisParentInfo)
 
+
+	logOps.WriteCmdJobFooterToLog(job, thisParentInfo)
 
 	return se.SignalNoErrors()
 }
