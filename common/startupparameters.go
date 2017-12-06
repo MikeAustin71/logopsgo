@@ -5,6 +5,14 @@ import (
 	"fmt"
 )
 
+/*  'startupparameters.go' is located in source code
+		repository:
+
+		https://github.com/MikeAustin71/logopsgo.git
+
+*/
+
+
 const (
 	srcFileNameStartUpParms = "startupparameters.go"
 	errBlockNoStartUpParms  = int64(351230000)

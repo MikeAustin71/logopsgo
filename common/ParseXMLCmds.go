@@ -7,6 +7,14 @@ import (
 	"os"
 )
 
+/*  'ParseXMLCmds.go' is located in source code
+		repository:
+
+		https://github.com/MikeAustin71/logopsgo.git
+
+*/
+
+
 const (
 	parseXMLSrcFile    = "main.go"
 	parseSMLErrBlockNo = int64(219610000)

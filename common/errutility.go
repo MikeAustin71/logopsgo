@@ -2,7 +2,17 @@ package common
 
 import (
 	"fmt"
+	"errors"
 )
+
+/*
+		The source code for errutility.go is located in source
+		code repository:
+
+						https://github.com/MikeAustin71/ErrHandlerGo.git
+*/
+
+
 
 // ErrBaseInfo is intended for use with
 // the SpecErr Structure. It sets up base
@@ -61,84 +71,15 @@ type SpecErr struct {
 	IsErr      bool
 	IsPanic    bool
 	PrefixMsg  string
+	ErrMsgLabel string
 	ErrMsg     string
 	ErrNo      int64
 }
 
-// InitializeBaseInfo - Initializes a SpecErr Structure
-// from a ParentInfo array and a ErrBaseInfo
-// structure
-func (s SpecErr) InitializeBaseInfo(parent []ErrBaseInfo, bi ErrBaseInfo) SpecErr {
-
-	return SpecErr{
-		ParentInfo: s.DeepCopyParentInfo(parent),
-		BaseInfo:   bi.DeepCopyBaseInfo()}
-}
-
-// Initialize - Initializes all elements of
-// the SpecErr structure
-func (s SpecErr) Initialize(parent []ErrBaseInfo, bi ErrBaseInfo, prefix string, err error, isPanic bool, errNo int64) SpecErr {
-	return s.InitializeBaseInfo(parent, bi).New(prefix, err, isPanic, errNo)
-
-}
-
-// New - Creates new SpecErr Type. Uses existing
-// Parent and ErrBaseInfo data
-func (s SpecErr) New(prefix string, err error, isPanic bool, errNo int64) SpecErr {
-
-	x := SpecErr{
-		ParentInfo: s.DeepCopyParentInfo(s.ParentInfo),
-		BaseInfo:   s.BaseInfo.DeepCopyBaseInfo(),
-		PrefixMsg:  prefix,
-		IsPanic:    isPanic}
-
-	x.ErrNo = errNo + x.BaseInfo.BaseErrorID
-
-	if err != nil {
-		x.ErrMsg = err.Error()
-		x.IsErr = true
-	} else {
-		x.ErrMsg = ""
-		x.IsErr = false
-		x.IsPanic = false
-	}
-
-	return x
-}
-
-// SignalNoErrors - Returns a SpecErr
-// structure with IsErr set to false.
-func (s SpecErr) SignalNoErrors() SpecErr {
-	return SpecErr{IsErr: false, IsPanic: false}
-}
-
-
-// DeepCopyBaseInfo - Returns a deep copy of the
-// current BaseInfo structure.
-func (s SpecErr) DeepCopyBaseInfo() ErrBaseInfo {
-	return s.BaseInfo.DeepCopyBaseInfo()
-}
-
-// SetBaseInfo - Sets the SpecErr ErrBaseInfo internal
-// structure. This data is used for creating repetitive
-// error information.
-func (s SpecErr) SetBaseInfo(bi ErrBaseInfo) {
-	s.BaseInfo = bi.NewBaseInfo()
-}
-
-// SetParentInfo - Sets the ParentInfo Slice for
-// the current SpecErr structure
-func (s SpecErr) SetParentInfo(parent []ErrBaseInfo) {
-	if len(parent) == 0 {
-		return
-	}
-
-	s.ParentInfo = s.DeepCopyParentInfo(parent)
-}
 
 // AddParentInfo - Adds ParentInfo elements to
 // the current SpecErr ParentInfo slice
-func (s SpecErr) AddParentInfo(parent []ErrBaseInfo) {
+func (s *SpecErr) AddParentInfo(parent []ErrBaseInfo) {
 	if len(parent) == 0 {
 		return
 	}
@@ -156,17 +97,52 @@ func (s SpecErr) AddParentInfo(parent []ErrBaseInfo) {
 // AddBaseToParentInfo - Adds the structure's
 // ErrBaseInfo data to ParentInfo and returns a
 // new ParentInfo Array
-func (s SpecErr) AddBaseToParentInfo() []ErrBaseInfo {
+func (s *SpecErr) AddBaseToParentInfo() []ErrBaseInfo {
 
 	a := s.DeepCopyParentInfo(s.ParentInfo)
 	return append(a, s.BaseInfo.DeepCopyBaseInfo())
+}
+
+// CheckErrPanic - Checks for error and then
+// executes 'panic'
+func (s *SpecErr) CheckErrPanic(e error) {
+	if e != nil {
+		panic(e)
+	}
+}
+
+// CheckIsSpecErr - If error is present,
+// returns 'true'.  If NO Error, returns
+// 'false'.
+func (s *SpecErr) CheckIsSpecErr() bool {
+
+	if s.IsErr {
+		return true
+	}
+
+	return false
+
+}
+
+// CheckIsSpecErrPanic - Returns 'true' if
+// SpecErr object is configured as a panic
+// error.
+func (s *SpecErr) CheckIsSpecErrPanic() bool {
+
+	return s.IsPanic
+}
+
+// DeepCopyBaseInfo - Returns a deep copy of the
+// current BaseInfo structure.
+func (s SpecErr) DeepCopyBaseInfo() ErrBaseInfo {
+	return s.BaseInfo.DeepCopyBaseInfo()
 }
 
 // DeepCopyParentInfo - Receives an array of slices
 // type ErrBaseInfo and appends deep copies
 // of those slices to the SpecErr ParentInfo
 // field.
-func (s SpecErr) DeepCopyParentInfo(pi []ErrBaseInfo) []ErrBaseInfo {
+func (s *SpecErr) DeepCopyParentInfo(pi []ErrBaseInfo) []ErrBaseInfo {
 
 	if len(pi) == 0 {
 		return pi
@@ -180,14 +156,6 @@ func (s SpecErr) DeepCopyParentInfo(pi []ErrBaseInfo) []ErrBaseInfo {
 	return a
 }
 
-// Panic - Executes 'panic' command
-// if IsPanic == 'true'
-func (s SpecErr) Panic() {
-	if s.IsPanic {
-		panic(s)
-	}
-}
-
 // Error - Implements Error Interface
 func (s SpecErr) Error() string {
 
@@ -198,7 +166,13 @@ func (s SpecErr) Error() string {
 		m += s.PrefixMsg
 	}
 
-	m += "\n" + s.ErrMsg
+	m+= "\n"
+
+	if s.ErrMsgLabel != "" {
+		m+= s.ErrMsgLabel + ": "
+	}
+
+	m += s.ErrMsg
 	m += "\n---------------------"
 
 	if s.BaseInfo.SourceFileName != "" {
@@ -209,7 +183,10 @@ func (s SpecErr) Error() string {
 		m += "\nFuncName: " + s.BaseInfo.FuncName
 	}
 
-	m += fmt.Sprintf("\nErrNo: %v", s.ErrNo)
+	if s.ErrNo != 0 {
+		m += fmt.Sprintf("\nErrNo: %v", s.ErrNo)
+	}
+
 	m += fmt.Sprintf("\nIsErr: %v", s.IsErr)
 	m += fmt.Sprintf("\nIsPanic: %v", s.IsPanic)
 
@@ -231,35 +208,117 @@ func (s SpecErr) Error() string {
 	return m
 }
 
-var blankErrBaseInfo = ErrBaseInfo{}
-var blankParentInfo = make([]ErrBaseInfo, 0, 10)
+// InitializeBaseInfo - Initializes a SpecErr Structure
+// from a ParentInfo array and a ErrBaseInfo
+// structure
+func (s SpecErr) InitializeBaseInfo(parent []ErrBaseInfo, bi ErrBaseInfo) SpecErr {
 
-// CheckErrPanic - Checks for error and then
-// executes 'panic'
-func CheckErrPanic(e error) {
-	if e != nil {
-		panic(e)
-	}
+	return SpecErr{
+		ParentInfo: s.DeepCopyParentInfo(parent),
+		BaseInfo:   bi.DeepCopyBaseInfo()}
 }
 
-// CheckIsSpecErr - If error is present,
-// returns 'true'.  If NO Error, returns
-// 'false'.
-func CheckIsSpecErr(eSpec SpecErr) bool {
+// Initialize - Initializes all elements of
+// the SpecErr structure
+func (s SpecErr) Initialize(parent []ErrBaseInfo, bi ErrBaseInfo, prefix string, err error, isPanic bool, errNo int64) SpecErr {
+	return s.InitializeBaseInfo(parent, bi).New(prefix, err, isPanic, errNo)
 
-	if eSpec.IsErr {
-		return true
+}
+
+// New - Creates new SpecErr Type. Uses existing
+// Parent and ErrBaseInfo data. The error is based on
+// a parameter of type 'error' passed to the method.
+//
+// Note: If you set errNo == zero, no error number will be displayed in the
+// in the error message.
+func (s SpecErr) New(prefix string, err error, isPanic bool, errNo int64) SpecErr {
+
+	x := SpecErr{
+		ParentInfo: s.DeepCopyParentInfo(s.ParentInfo),
+		BaseInfo:   s.BaseInfo.DeepCopyBaseInfo(),
+		PrefixMsg:  prefix,
+		IsPanic:    isPanic}
+
+	if errNo != 0 {
+		x.ErrNo = errNo + x.BaseInfo.BaseErrorID
 	}
 
-	return false
 
+	if err != nil {
+		x.ErrMsg = err.Error()
+		x.IsErr = true
+	} else {
+		x.ErrMsg = ""
+		x.IsErr = false
+		x.IsPanic = false
+	}
+
+	return x
+}
+
+// NewErrorMsgString - Creates a new error message
+// based on an error message string.
+//
+// Note: If you set errNo == zero, no error number will be displayed in the
+// in the error message.
+func (s SpecErr) NewErrorMsgString(prefix string, errMsg string, isPanic bool, errNo int64) SpecErr {
+		er := errors.New(errMsg)
+
+		return s.New(prefix, er, isPanic, errNo)
+}
+
+// Panic - Executes 'panic' command
+// if IsPanic == 'true'
+func (s *SpecErr) Panic() {
+	if s.IsPanic {
+		panic(s)
+	}
 }
 
 // PanicOnSpecErr - Issues a 'panic'
 // command if SpecErr IsPanic flag is set
-func PanicOnSpecErr(eSpec SpecErr) {
+func (s *SpecErr) PanicOnSpecErr(eSpec SpecErr) {
 
-	if eSpec.IsPanic {
-		panic(eSpec)
+	if s.IsPanic {
+		panic(s)
 	}
 }
+
+// SignalNoErrors - Returns a SpecErr
+// structure with IsErr set to false.
+func (s SpecErr) SignalNoErrors() SpecErr {
+	return SpecErr{IsErr: false, IsPanic: false}
+}
+
+// SetBaseInfo - Sets the SpecErr ErrBaseInfo internal
+// structure. This data is used for creating repetitive
+// error information.
+func (s *SpecErr) SetBaseInfo(bi ErrBaseInfo) {
+	s.BaseInfo = bi.NewBaseInfo()
+}
+
+// SetErrorLabel - If an Error Message Label is needed
+// the Error message, set the value Error Message Label
+// here.  This method merely sets the SpecErr string field,
+// SpecErr.ErrMsgLabel. Of course this field can also be
+// set directly with the use of this method.
+//
+// If the SpecErr.ErrMsgLabel is set to "StdOut Err", the
+// error message will be formatted as :
+// 						"StdOut Err: Your Error Message"
+func (s *SpecErr) SetErrorMessageLabel(errorMsgLabel string) {
+	s.ErrMsgLabel = errorMsgLabel
+}
+// SetParentInfo - Sets the ParentInfo Slice for
+// the current SpecErr structure
+func (s *SpecErr) SetParentInfo(parent []ErrBaseInfo) {
+	if len(parent) == 0 {
+		return
+	}
+
+	s.ParentInfo = s.DeepCopyParentInfo(parent)
+}
+
+var blankErrBaseInfo = ErrBaseInfo{}
+var blankParentInfo = make([]ErrBaseInfo, 0, 10)
+

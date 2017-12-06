@@ -3,6 +3,9 @@
 New xml format for CmdrGo XML Format
 Input All DateTimes using format: '2006-01-02 15:04:05'
 Time Zone Info will be taken from Element 'IanaTimeZone'
+If 'IanaTimeZone' is blank, time zone will default to
+'Local' time zone for the host machine.
+
 -->
 <CommandsBatch>
   <CommandJobsHeader>

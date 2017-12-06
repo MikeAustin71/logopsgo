@@ -7,6 +7,13 @@ import (
 	"time"
 )
 
+/*  'logjobgroupconfig.go' is located in source code
+		repository:
+
+				https://github.com/MikeAustin71/logopsgo.git
+
+ */
+
 const (
 	// LogGroupConfigSrcFile - Log Group Cfg source
 	// code file name.

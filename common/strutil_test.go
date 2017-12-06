@@ -6,6 +6,13 @@ import (
 	"testing"
 )
 
+/*
+	'strutil_test.go' is located in source code repository:
+
+			https://AmarilloMike@bitbucket.org/AmarilloMike/stringutilgo.git
+*/
+
+
 func TestStrCenterInStr(t *testing.T) {
 	strToCntr := "1234567"
 	fieldLen := 79
@@ -136,7 +143,6 @@ func TestStringUtility_TrimEndMultiple_004(t *testing.T) {
 		t.Error("Error Return from TrimEndMultiple: ", err.Error())
 	}
 
-
 	if result != expected {
 		t.Errorf("Expected result == '%v' instead received result== '%v'", expected, result)
 	}
@@ -153,7 +159,6 @@ func TestStringUtility_TrimEndMultiple_005(t *testing.T) {
 	if err != nil {
 		t.Error("Error Return from TrimEndMultiple: ", err.Error())
 	}
-
 
 	if result != expected {
 		t.Errorf("Expected result == '%v' instead received result== '%v'", expected, result)
@@ -172,7 +177,6 @@ func TestStringUtility_TrimEndMultiple_006(t *testing.T) {
 		t.Error("Error Return from TrimEndMultiple: ", err.Error())
 	}
 
-
 	if result != expected {
 		t.Errorf("Expected result == '%v' instead received result== '%v'", expected, result)
 	}
@@ -190,7 +194,6 @@ func TestStringUtility_TrimEndMultiple_007(t *testing.T) {
 		t.Error("Error Return from TrimEndMultiple: ", err.Error())
 	}
 
-
 	if result != expected {
 		t.Errorf("Expected result == '%v' instead received result== '%v'", expected, result)
 	}
@@ -198,7 +201,7 @@ func TestStringUtility_TrimEndMultiple_007(t *testing.T) {
 }
 
 func TestStringUtility_SwapRune_001(t *testing.T) {
-	su:= StringUtility{}
+	su := StringUtility{}
 
 	tStr := "  Hello   World  "
 	expected := "!!Hello!!!World!!"
@@ -212,7 +215,7 @@ func TestStringUtility_SwapRune_001(t *testing.T) {
 		t.Errorf("Expected result == '%v' instead received result== '%v'", expected, result)
 	}
 
-	resultLen:= len(result)
+	resultLen := len(result)
 	expectedLen := len(expected)
 
 	if resultLen != expectedLen {
@@ -222,7 +225,7 @@ func TestStringUtility_SwapRune_001(t *testing.T) {
 }
 
 func TestStringUtility_SwapRune_002(t *testing.T) {
-	su:= StringUtility{}
+	su := StringUtility{}
 
 	tStr := "HelloWorld"
 	expected := "HelloWorld"
@@ -236,7 +239,7 @@ func TestStringUtility_SwapRune_002(t *testing.T) {
 		t.Errorf("Expected result == '%v' instead received result== '%v'", expected, result)
 	}
 
-	resultLen:= len(result)
+	resultLen := len(result)
 	expectedLen := len(expected)
 
 	if resultLen != expectedLen {
@@ -246,7 +249,7 @@ func TestStringUtility_SwapRune_002(t *testing.T) {
 }
 
 func TestStringUtility_SwapRune_003(t *testing.T) {
-	su:= StringUtility{}
+	su := StringUtility{}
 
 	tStr := "Hello Worldx"
 	expected := "Hello WorldX"
@@ -260,7 +263,7 @@ func TestStringUtility_SwapRune_003(t *testing.T) {
 		t.Errorf("Expected result == '%v' instead received result== '%v'", expected, result)
 	}
 
-	resultLen:= len(result)
+	resultLen := len(result)
 	expectedLen := len(expected)
 
 	if resultLen != expectedLen {
@@ -270,7 +273,7 @@ func TestStringUtility_SwapRune_003(t *testing.T) {
 }
 
 func TestStringUtility_SwapRune_004(t *testing.T) {
-	su:= StringUtility{}
+	su := StringUtility{}
 
 	tStr := "xHello World"
 	expected := "XHello World"
@@ -284,7 +287,7 @@ func TestStringUtility_SwapRune_004(t *testing.T) {
 		t.Errorf("Expected result == '%v' instead received result== '%v'", expected, result)
 	}
 
-	resultLen:= len(result)
+	resultLen := len(result)
 	expectedLen := len(expected)
 
 	if resultLen != expectedLen {
@@ -292,5 +295,3 @@ func TestStringUtility_SwapRune_004(t *testing.T) {
 	}
 
 }
-
-

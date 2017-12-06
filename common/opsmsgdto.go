@@ -2,6 +2,15 @@ package common
 
 import "time"
 
+/*  'opsmsgdto.go' is located in source code
+		repository:
+
+		https://github.com/MikeAustin71/logopsgo.git
+
+*/
+
+
+
 // OpsMsgDto - Data Transfer Object
 // containing information about an
 // operations Message
@@ -53,9 +62,17 @@ func(opsMsg *OpsMsgDto) NewInfoMsg(msg string) OpsMsgDto {
 
 func(opsMsg *OpsMsgDto)SetTime(localTimeZone string){
 
+	tz := TimeZoneUtility{}
+
+	isValid, _, _ := tz.IsValidTimeZone(localTimeZone)
+
+	if !isValid {
+		localTimeZone = "Local"
+	}
+
 	opsMsg.MsgTimeUTC = time.Now().UTC()
 	opsMsg.LocalTimeZone = localTimeZone
-	tz := TimeZoneUtility{}
+
 	tzLocal, _ := tz.ConvertTz(opsMsg.MsgTimeUTC, opsMsg.LocalTimeZone)
 	opsMsg.MsgTimeLocal = tzLocal.TimeOut
 

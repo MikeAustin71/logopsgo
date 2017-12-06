@@ -96,7 +96,7 @@ func startUp(lg *common.LogJobGroup,parent []common.ErrBaseInfo) (common.Command
 		panic(sea)
 	}
 
-	parms.IanaTimeZone = cmds.CmdJobsHdr.IanaTimeZone
+	parms.IanaTimeZone = 	cmds.CmdJobsHdr.IanaTimeZone
 	parms.KillAllJobsOnFirstError = cmds.CmdJobsHdr.KillAllJobsOnFirstError
 	parms.StartTimeUTC = cmds.CmdJobsHdr.CmdBatchStartUTC
 	parms.StartTime = cmds.CmdJobsHdr.CmdBatchStartTime

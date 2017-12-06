@@ -7,6 +7,14 @@ import (
 	"time"
 )
 
+/*  'loggingmode.go' is located in source code
+		repository:
+
+		https://github.com/MikeAustin71/logopsgo.git
+
+ */
+
+
 const (
 	srcFileNameXMLCmdJobsData = "XMLCmdJobsData.go"
 	errBlockNoXMLCmdJobsData  = int64(9230610000)
@@ -25,6 +33,10 @@ func (cmdBatch *CommandBatch) FormatCmdParameters() {
 }
 
 func (cmdBatch *CommandBatch) assembleTimeFormats() {
+
+	if cmdBatch.CmdJobsHdr.IanaTimeZone == "" {
+		cmdBatch.CmdJobsHdr.IanaTimeZone = "Local"
+	}
 
 	tzu := TimeZoneUtility{}
 	isValidTz, _, _ := tzu.IsValidTimeZone(cmdBatch.CmdJobsHdr.IanaTimeZone)

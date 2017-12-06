@@ -1,5 +1,12 @@
 package common
 
+/*  'PrintXml.go' is located in source code
+		repository:
+
+		https://github.com/MikeAustin71/logopsgo.git
+
+*/
+
 import "fmt"
 
 const (
