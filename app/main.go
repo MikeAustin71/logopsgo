@@ -174,9 +174,15 @@ func executeJob(job *common.CmdJob, logOps *common.LogJobGroup, parent []common.
 	time.Sleep(time.Duration(5) * time.Second)
 
 	s := fmt.Sprintf("Completed Job: %v. No Errors!", job.CmdDisplayName)
-	om.SetInfoMessage(s, 612)
+	opsMsg := common.OpsMsgDto{}
 
-	logOps.WriteOpsMsgToLog(om, job, thisParentInfo)
+	job.CmdJobNoOfMsgs++
+
+	opsMsg.SetTimeZone(job.IanaTimeZone)
+
+	opsMsg.SetInfoMessage(s, int64((job.CmdJobNo * 10000000) + job.CmdJobNoOfMsgs))
+
+	logOps.WriteOpsMsgToLog(opsMsg, job, thisParentInfo)
 
 	job.SetCmdJobActualEndTime(thisParentInfo)
 

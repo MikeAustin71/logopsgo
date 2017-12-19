@@ -18,7 +18,7 @@ import (
 const (
 	srcFileNameXMLCmdJobsData = "XMLCmdJobsData.go"
 	errBlockNoXMLCmdJobsData  = int64(9230610000)
-	logOpsTimeFmt = "2006-01-02 15:04:05.000000000 -0700 MST"
+	logOpsTimeFmt = "2006-01-02 Mon 15:04:05.000000000 -0700 MST"
 )
 
 // CommandBatch - Xml Root and Parent Element

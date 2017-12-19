@@ -299,15 +299,17 @@ func (logOps *LogJobGroup) writeJobGroupHeaderToLog(parent []OpsMsgContextInfo) 
 
 	logOps.writeFileStr(logOps.Banner2, thisParentInfo)
 
-	str = fmt.Sprintf("  Job Group Start Time UTC: %v \n", dt.GetDateTimeEverything(logOps.StartTimeUTC))
+	str = fmt.Sprintf("  Job Group Start Time UTC: %v \n", dt.GetDateTimeYMDAbbrvDowNano(logOps.StartTimeUTC))
 
 	logOps.writeTabFileStr(str, 0, parent)
 
-	str = fmt.Sprintf("Job Group Start Time Local: %v \n", dt.GetDateTimeEverything(logOps.StartTime))
+	str = fmt.Sprintf("Job Group Start Time Local: %v \n", dt.GetDateTimeYMDAbbrvDowNano(logOps.StartTime))
 
 	logOps.writeTabFileStr(str, 0, parent)
 
-	str = fmt.Sprintf(" Job Group Local Time Zone: %v \n", logOps.IanaTimeZone)
+	localZone, _ := logOps.StartTime.Zone()
+
+	str = fmt.Sprintf(" Job Group Local Time Zone: %v - %v \n", logOps.IanaTimeZone, localZone)
 
 	logOps.writeTabFileStr(str, 0, parent)
 
@@ -456,29 +458,31 @@ func (logOps *LogJobGroup) WriteJobGroupFooterToLog(cmds CommandBatch, parent []
 	stx = "Job Group Execution Times:\n"
 	logOps.writeTabFileStr(stx, 1, thisParentInfo)
 	logOps.writeFileStr(logOps.Banner4, thisParentInfo)
-	str = dt.GetDateTimeEverything(logOps.StartTimeUTC)
+	str = dt.GetDateTimeYMDAbbrvDowNano(logOps.StartTimeUTC)
 	stx = fmt.Sprintf("JobGroup   Start Time UTC: %v \n", str)
 	logOps.writeTabFileStr(stx, 1, thisParentInfo)
 
 	logOps.EndTimeUTC = cmds.CmdJobsHdr.CmdBatchEndUTC
 	logOps.EndTime = cmds.CmdJobsHdr.CmdBatchEndTime
-	str = dt.GetDateTimeEverything(logOps.EndTimeUTC)
+	str = dt.GetDateTimeYMDAbbrvDowNano(logOps.EndTimeUTC)
 	stx = fmt.Sprintf("JobGroup     End Time UTC: %v \n", str)
 	logOps.writeTabFileStr(stx, 1, thisParentInfo)
 
 	logOps.writeFileStr(logOps.Banner4, thisParentInfo)
 
-	str = dt.GetDateTimeEverything(logOps.StartTime)
+	str = dt.GetDateTimeYMDAbbrvDowNano(logOps.StartTime)
 	stx = fmt.Sprintf("JobGroup Start Time Local: %v \n", str)
 	logOps.writeTabFileStr(stx, 1, thisParentInfo)
 
-	str = dt.GetDateTimeEverything(logOps.EndTime)
+	str = dt.GetDateTimeYMDAbbrvDowNano(logOps.EndTime)
 	stx = fmt.Sprintf("JobGroup   End Time Local: %v \n", str)
 	logOps.writeTabFileStr(stx, 1, thisParentInfo)
 
 	logOps.writeFileStr(logOps.Banner4, thisParentInfo)
 
-	stx = fmt.Sprintf("JobGroup  Local Time Zone: %v \n", logOps.IanaTimeZone)
+	tzLocal, _ := logOps.EndTime.Zone()
+
+	stx = fmt.Sprintf("JobGroup  Local Time Zone: %v - %v\n", logOps.IanaTimeZone, tzLocal)
 	logOps.writeTabFileStr(stx, 1, thisParentInfo)
 
 	logOps.writeFileStr(logOps.Banner4, thisParentInfo)
@@ -558,38 +562,31 @@ func (logOps *LogJobGroup) WriteCmdJobHeaderToLog(job *CmdJob, parent []OpsMsgCo
 
 	logOps.writeFileStr(logOps.Banner2, thisParentInfo)
 
-	logOps.writeFileStr("\n", thisParentInfo)
-	logOps.writeFileStr(logOps.Banner3, thisParentInfo)
-	str = fmt.Sprintf("Cmd Job Description: %v\n", job.CmdDescription)
+	str = fmt.Sprintf("   Command Job Description: %v\n", job.CmdDescription)
 	logOps.writeTabFileStr(str, 1, thisParentInfo)
-	logOps.writeFileStr(logOps.Banner3, thisParentInfo)
+
 	logOps.writeFileStr(logOps.Banner4, thisParentInfo)
-	str = fmt.Sprintf("Cmd Type: %v\n", job.CmdDescription)
+	str = fmt.Sprintf("               Command Type: %v\n", job.CmdDescription)
 	logOps.writeTabFileStr(str, 1, thisParentInfo)
 
-	str = fmt.Sprintf("Execute Cmd In Directory: %v\n", job.ExeCmdInDir)
+	str = fmt.Sprintf("   Execute Cmd In Directory: %v\n", job.ExeCmdInDir)
 	logOps.writeTabFileStr(str, 1, thisParentInfo)
 
-	str = fmt.Sprintf("Delay Cmd Start Seconds: %v\n", job.DelayCmdStartSeconds)
+	str = fmt.Sprintf("    Delay Cmd Start Seconds: %v\n", job.DelayCmdStartSeconds)
 	logOps.writeTabFileStr(str, 1, thisParentInfo)
 
 	str = fmt.Sprintf("Delay Cmd Start Target Time: %v\n", job.DelayStartCmdDateTime)
 	logOps.writeTabFileStr(str, 1, thisParentInfo)
 
-	str = fmt.Sprintf("Delay Cmd Time Out in Seconds: %v\n", job.CommandTimeOutInSeconds)
-	logOps.writeTabFileStr(str, 1, thisParentInfo)
-	logOps.writeFileStr(logOps.Banner4, thisParentInfo)
-	logOps.writeFileStr("\n", thisParentInfo)
-
-	logOps.writeFileStr(logOps.Banner3, thisParentInfo)
-	str = fmt.Sprintf("Execution Command: %v\n", job.ExeCommand)
+	str = fmt.Sprintf("    Cmd Time Out in Seconds: %v\n", job.CommandTimeOutInSeconds)
 	logOps.writeTabFileStr(str, 1, thisParentInfo)
 
-	str = fmt.Sprintf("Command Arguments: %v\n", job.CombinedArguments)
+	str = fmt.Sprintf("          Execution Command: %v\n", job.ExeCommand)
+	logOps.writeTabFileStr(str, 1, thisParentInfo)
+
+	str = fmt.Sprintf("          Command Arguments: %v\n", job.CombinedArguments)
 	logOps.writeTabFileStr(str, 1, thisParentInfo)
 	logOps.writeFileStr(logOps.Banner3, thisParentInfo)
-
-	logOps.writeFileStr("\n", thisParentInfo)
 
 	str = "Command Job Start Times\n"
 	stx, err = su.StrCenterInStr(str, logOps.BannerLen)
@@ -608,13 +605,14 @@ func (logOps *LogJobGroup) WriteCmdJobHeaderToLog(job *CmdJob, parent []OpsMsgCo
 	str = fmt.Sprintf("Cmd Job Start Time Local: %v\n", job.CmdJobStartTimeValue.Format(job.CmdJobTimeFormat))
 	logOps.writeTabFileStr(str, 1, thisParentInfo)
 
-	str = fmt.Sprintf(" Cmd Job Local Time Zone: %v\n", job.IanaTimeZone)
+	tzLocal, _ := job.CmdJobStartTimeValue.Zone()
+	str = fmt.Sprintf(" Cmd Job Local Time Zone: %v - %v\n", job.IanaTimeZone, tzLocal)
 	logOps.writeTabFileStr(str, 1, thisParentInfo)
-	logOps.writeFileStr(logOps.Banner3, thisParentInfo)
+
 
 	logOps.writeFileStr(logOps.Banner2, thisParentInfo)
 	logOps.writeFileStr(logOps.Banner2, thisParentInfo)
-	logOps.writeFileStr("\n\n", thisParentInfo)
+
 
 	om.SetSuccessfulCompletionMessage("Finished WriteCmdJobHeaderToLog", 2509)
 	return om
@@ -711,7 +709,8 @@ func (logOps *LogJobGroup) WriteCmdJobFooterToLog(job *CmdJob, parent []OpsMsgCo
 	str = fmt.Sprintf("  Cmd Job End Time Local: %v\n", job.CmdJobEndTimeValue.Format(job.CmdJobTimeFormat))
 	logOps.writeTabFileStr(str, 1, thisParentInfo)
 
-	str = fmt.Sprintf(" Cmd Job Local Time Zone: %v\n", job.IanaTimeZone)
+	tzLocal, _ := job.CmdJobEndTimeValue.Zone()
+	str = fmt.Sprintf(" Cmd Job Local Time Zone: %v - %v\n", job.IanaTimeZone, tzLocal)
 	logOps.writeTabFileStr(str, 1, thisParentInfo)
 	logOps.writeFileStr(logOps.Banner4, thisParentInfo)
 	logOps.writeFileStr("\n", thisParentInfo)
@@ -757,83 +756,12 @@ func (logOps *LogJobGroup) WriteCmdJobFooterToLog(job *CmdJob, parent []OpsMsgCo
 
 func (logOps *LogJobGroup) WriteOpsMsgToLog(opsMsgToLog OpsMsgDto, job *CmdJob, parent []OpsMsgContextInfo) OpsMsgDto {
 
-	job.CmdJobNoOfMsgs++
 
 	om := logOps.baseLogErrConfig(parent, "WriteOpsMsgToLog()")
 
 	thisParentInfo := om.GetNewParentHistory()
 
-	su := StringUtility{}
-
-	opsMsgToLog.SetTimeZone(job.IanaTimeZone)
-
-	logOps.writeFileStr("\n\n", thisParentInfo)
-	logOps.writeFileStr(logOps.Banner7, thisParentInfo)
-	logOps.writeFileStr(logOps.Banner7, thisParentInfo)
-
-	str := "Job Execution Message\n"
-	stx, err := su.StrCenterInStr(str, logOps.BannerLen)
-	if err != nil {
-		s := "StrCenterInStr threw error on Command Job Execution Message"
-		om.SetFatalError(s, err, 2701)
-		return om
-	}
-
-	logOps.writeFileStr(stx, thisParentInfo)
-	logOps.writeFileStr(logOps.Banner5, thisParentInfo)
-	str = fmt.Sprintf("Command Job Name: %v\n", job.CmdDisplayName)
-	logOps.writeTabFileStr(str, 1, thisParentInfo)
-	str = fmt.Sprintf("Command Job Number: %v\n", job.CmdJobNo)
-	logOps.writeTabFileStr(str, 1, thisParentInfo)
-
-	str = fmt.Sprintf("Command Message Number: %v\n", job.CmdJobNoOfMsgs)
-	logOps.writeTabFileStr(str, 1, thisParentInfo)
-
-	str = fmt.Sprintf("Command Message Type: %v\n", opsMsgToLog.MsgType)
-	logOps.writeTabFileStr(str, 1, thisParentInfo)
-
-	str = fmt.Sprintf("  Command Message Time UTC: %v\n", opsMsgToLog.MsgTimeUTC.Format(job.CmdJobTimeFormat))
-	logOps.writeTabFileStr(str, 1, thisParentInfo)
-
-	str = fmt.Sprintf("Command Message Time Local: %v\n", opsMsgToLog.MsgTimeLocal.Format(job.CmdJobTimeFormat))
-	logOps.writeTabFileStr(str, 1, thisParentInfo)
-
-	str = fmt.Sprintf(" Command Message Time Zone: %v\n", opsMsgToLog.MsgLocalTimeZone)
-	logOps.writeTabFileStr(str, 1, thisParentInfo)
-	logOps.writeFileStr(logOps.Banner5, thisParentInfo)
-
-	lenMsgs := len(opsMsgToLog.Message)
-
-	for i := 0; i < lenMsgs; i++ {
-		if i == 0 {
-			str = "Command Message:\n"
-			logOps.writeTabFileStr(str, 1, thisParentInfo)
-			logOps.writeFileStr(logOps.Banner6, thisParentInfo)
-			logOps.writeFileStr("\n", thisParentInfo)
-		}
-
-		logOps.writeTabFileStr(opsMsgToLog.String(), 2, thisParentInfo)
-
-		if i == (lenMsgs - 1) {
-			logOps.writeFileStr("\n", thisParentInfo)
-			logOps.writeFileStr(logOps.Banner6, thisParentInfo)
-			logOps.writeFileStr("\n", thisParentInfo)
-		}
-
-	}
-
-	logOps.writeFileStr(logOps.Banner7, thisParentInfo)
-	str = fmt.Sprintf("End Of Job Execution Message Number: %v\n",	job.CmdJobNoOfMsgs)
-	stx, err = su.StrCenterInStr(str, logOps.BannerLen)
-	if err != nil {
-		s := "StrCenterInStr threw error on Command Job Execution Message"
-		om.SetFatalError(s, err, 2702)
-		return om
-	}
-
-	logOps.writeFileStr(stx, thisParentInfo)
-	logOps.writeFileStr(logOps.Banner7, thisParentInfo)
-	logOps.writeFileStr("\n\n", thisParentInfo)
+	logOps.writeTabFileStr(opsMsgToLog.String(), 2, thisParentInfo)
 
 	om.SetSuccessfulCompletionMessage("Finished WriteOpsMsgToLog", 2709)
 
