@@ -67,12 +67,11 @@ type LogJobGroup struct {
 // New - Initializes key
 // elements of a Logging Configuration
 func (logOps *LogJobGroup) New(startParams StartupParameters,
-	parent []ErrBaseInfo) SpecErr {
+																	parent []OpsMsgContextInfo) OpsMsgDto {
 
 	var err error
-	var isPanic bool
 
-	se := logOps.baseLogErrConfig(parent, "New()")
+	om := logOps.baseLogErrConfig(parent, "New()")
 
 	// Assumes CreateAllFormatsInMemory() has
 	// already been called.
@@ -106,8 +105,8 @@ func (logOps *LogJobGroup) New(startParams StartupParameters,
 
 	if err != nil {
 		s := fmt.Sprintf("MakeAbsolutePath Failed for AppLogPath '%v'", startParams.AppLogPath)
-		isPanic = true
-		return se.New(s, err, isPanic, 101)
+		om.SetFatalError(s, err, 101)
+		return om
 	}
 
 	logOps.AppLogPathFileName = fh.JoinPathsAdjustSeparators(logOps.AppLogDir, logOps.AppLogFileName)
@@ -134,22 +133,21 @@ func (logOps *LogJobGroup) New(startParams StartupParameters,
 
 	if err != nil {
 		s := "GetAbsCurrDir() Failed!"
-		isPanic = true
-		return se.New(s, err, isPanic, 102)
+		om.SetFatalError(s, err, 102)
+		return om
 	}
 
-	return logOps.InitializeLogFile(se.AddBaseToParentInfo())
+	return logOps.InitializeLogFile(om.GetNewParentHistory())
 
 }
 
 // InitializeLogFile - Creates the log directory and
 // a new log file. Opens the Log File. New(..) MUST
 // be called before this method!
-func (logOps *LogJobGroup) InitializeLogFile(parent []ErrBaseInfo) SpecErr {
+func (logOps *LogJobGroup) InitializeLogFile(parent []OpsMsgContextInfo) OpsMsgDto {
 
 	var err error
-	var isPanic bool
-	se := logOps.baseLogErrConfig(parent, "InitializeLogFile()")
+	om := logOps.baseLogErrConfig(parent, "InitializeLogFile()")
 
 	fh := FileHelper{}
 
@@ -159,8 +157,8 @@ func (logOps *LogJobGroup) InitializeLogFile(parent []ErrBaseInfo) SpecErr {
 
 		if err != nil {
 			s := fmt.Sprintf("MakeDirAll() Failed on Dir: %v", logOps.AppLogDir)
-			isPanic = true
-			return se.New(s, err, isPanic, 201)
+			om.SetFatalError(s, err, 201)
+			return om
 		}
 
 	}
@@ -174,8 +172,8 @@ func (logOps *LogJobGroup) InitializeLogFile(parent []ErrBaseInfo) SpecErr {
 
 		if err != nil {
 			s := fmt.Sprintf("DeleteDirFile() Failed on File: %v", logOps.AppLogPathFileName)
-			isPanic = true
-			return se.New(s, err, isPanic, 202)
+			om.SetFatalError(s, err, 202)
+			return om
 		}
 	}
 
@@ -184,29 +182,31 @@ func (logOps *LogJobGroup) InitializeLogFile(parent []ErrBaseInfo) SpecErr {
 
 	if err != nil {
 		s := fmt.Sprintf("CreateFile() Failed on File: %v Error: %v", logOps.AppLogPathFileName, err.Error())
-		isPanic = true
-		return se.New(s, err, isPanic, 203)
+		om.SetFatalError(s, err, 203)
+		return om
 	}
 
-	si := logOps.purgeOldLogFiles(se.AddBaseToParentInfo())
+	om2 := logOps.purgeOldLogFiles(om.GetNewParentHistory())
 
-	if si.IsErr {
-		si.IsPanic = true
-		return si
+	if om2.IsFatalError() {
+
+		return om2
 	}
 
-	return logOps.writeJobGroupHeaderToLog(se.AddBaseToParentInfo())
+	return logOps.writeJobGroupHeaderToLog(om.GetNewParentHistory())
 }
 
 // purgeOldLogFiles - Deletes log files which are older than
 // logOps.LogFileRetentionInDays
-func (logOps *LogJobGroup) purgeOldLogFiles(parent []ErrBaseInfo) SpecErr {
-	se := logOps.baseLogErrConfig(parent, "purgeOldLogFiles()")
+func (logOps *LogJobGroup) purgeOldLogFiles(parent []OpsMsgContextInfo) OpsMsgDto {
+
+	om := logOps.baseLogErrConfig(parent, "purgeOldLogFiles()")
 
 	fh := FileHelper{}
 
 	if logOps.LogFileRetentionInDays < 0 {
-		return se.SignalNoErrors()
+		om.SetSuccessfulCompletionMessage("Finished purgeOldLogFiles - No Log Files To Delete.", 1801)
+		return om
 	}
 
 	logDur := time.Duration(logOps.LogFileRetentionInDays*24*-1) * time.Hour
@@ -215,7 +215,8 @@ func (logOps *LogJobGroup) purgeOldLogFiles(parent []ErrBaseInfo) SpecErr {
 	thresholdTime := du.StartDateTime
 
 	if thresholdTime.IsZero() {
-		return se.SignalNoErrors()
+		om.SetSuccessfulCompletionMessage("Finished purgeOldLogFiles - thresholdTime is Zero.", 1802)
+		return om
 	}
 
 	logOps.AppLogDirWalkInfo = DirWalkInfo{}
@@ -226,12 +227,14 @@ func (logOps *LogJobGroup) purgeOldLogFiles(parent []ErrBaseInfo) SpecErr {
 	err := fh.WalkDirPurgeFilesOlderThan(&logOps.AppLogDirWalkInfo)
 	if err != nil {
 		s := fmt.Sprintf("WalkDirPurgeFilesOlderThan() Failed on File: %v Error: %v", logOps.AppLogPathFileName, err.Error())
-		return se.New(s, err, true, 1801)
+		om.SetFatalError(s, err, 1803)
+		return om
 	}
 
 	logOps.NoOfLogFilesPurged = len(logOps.AppLogDirWalkInfo.DeletedFiles)
-
-	return se.SignalNoErrors()
+	s:= fmt.Sprintf("Finished purgeOldLogFiles - Successfully Purged %v old Log Files.", logOps.NoOfLogFilesPurged)
+	om.SetSuccessfulCompletionMessage(s,1809 )
+	return om
 
 }
 
@@ -240,19 +243,18 @@ func (logOps *LogJobGroup) purgeOldLogFiles(parent []ErrBaseInfo) SpecErr {
 // operation for each log file. Method InitializeLogFile(..)
 // MUST be called before first use of this method.
 // The Header is always the first element in the Log.
-func (logOps *LogJobGroup) writeJobGroupHeaderToLog(parent []ErrBaseInfo) SpecErr {
+func (logOps *LogJobGroup) writeJobGroupHeaderToLog(parent []OpsMsgContextInfo) OpsMsgDto {
 	var err error
-	var isPanic bool
 	var str, stx string
 
-	se := logOps.baseLogErrConfig(parent, "writeJobGroupHeaderToLog()")
+	om := logOps.baseLogErrConfig(parent, "writeJobGroupHeaderToLog()")
 
-	thisParentInfo := se.AddBaseToParentInfo()
+	thisParentInfo := om.GetNewParentHistory()
 
 	if logOps.FilePtr == nil {
 		s := "logOps.FilePtr was not correctly initialized! logOps.FilePtr *os.File pointer is nil!"
-		isPanic = true
-		return se.New(s, err, isPanic, 301)
+		om.SetFatalErrorMessage(s, 301)
+		return om
 	}
 
 	logOps.writeFileStr(logOps.Banner1, thisParentInfo)
@@ -263,8 +265,8 @@ func (logOps *LogJobGroup) writeJobGroupHeaderToLog(parent []ErrBaseInfo) SpecEr
 	str, err = su.StrCenterInStr(stx, logOps.BannerLen)
 	if err != nil {
 		s := "StrCenterInStr threw error on AppName AppVersion"
-		isPanic = true
-		return se.New(s, err, isPanic, 302)
+		om.SetFatalError(s, err, 302)
+		return om
 	}
 
 	logOps.writeFileStr(str, thisParentInfo)
@@ -276,8 +278,8 @@ func (logOps *LogJobGroup) writeJobGroupHeaderToLog(parent []ErrBaseInfo) SpecEr
 	stx, err = su.StrCenterInStr(str, logOps.BannerLen)
 	if err != nil {
 		s := "StrCenterInStr threw error on Command File Name"
-		isPanic = true
-		return se.New(s, err, isPanic, 303)
+		om.SetFatalError(s, err, 303)
+		return om
 	}
 
 	logOps.writeFileStr(stx, thisParentInfo)
@@ -287,8 +289,8 @@ func (logOps *LogJobGroup) writeJobGroupHeaderToLog(parent []ErrBaseInfo) SpecEr
 	stx, err = su.StrCenterInStr(str, logOps.BannerLen)
 	if err != nil {
 		s := "StrCenterInStr threw error on Number of Jobs Executed"
-		isPanic = true
-		return se.New(s, err, isPanic, 304)
+		om.SetFatalError(s, err, 304)
+		return om
 	}
 
 	logOps.writeFileStr(stx, thisParentInfo)
@@ -373,26 +375,26 @@ func (logOps *LogJobGroup) writeJobGroupHeaderToLog(parent []ErrBaseInfo) SpecEr
 	logOps.writeFileStr(logOps.Banner1, thisParentInfo)
 
 	// Signal Successful Completion
-	return se.SignalNoErrors()
+	om.SetSuccessfulCompletionMessage("Finished writeJobGroupHeaderToLog", 309)
+	return om
 }
 
 // WriteJobGroupFooterToLog - Writes the trailing Job Group data
 // to the Log File. This is the last entry in the Log. The File
 // pointer is closed here.
-func (logOps *LogJobGroup) WriteJobGroupFooterToLog(cmds CommandBatch, parent []ErrBaseInfo) SpecErr {
+func (logOps *LogJobGroup) WriteJobGroupFooterToLog(cmds CommandBatch, parent []OpsMsgContextInfo) OpsMsgDto {
 
 	var err error
-	var isPanic bool
 	var str, stx string
 
-	se := logOps.baseLogErrConfig(parent, "WriteJobGroupFooterToLog()")
+	om := logOps.baseLogErrConfig(parent, "WriteJobGroupFooterToLog()")
 
-	thisParentInfo := se.AddBaseToParentInfo()
+	thisParentInfo := om.GetNewParentHistory()
 
 	if logOps.FilePtr == nil {
 		s := "logOps.FilePtr was not correctly initialized! logOps.FilePtr *os.File pointer is nil!"
-		isPanic = true
-		return se.New(s, err, isPanic, 801)
+		om.SetFatalErrorMessage(s, 801)
+		return om
 	}
 
 	defer logOps.FilePtr.Close()
@@ -407,8 +409,8 @@ func (logOps *LogJobGroup) WriteJobGroupFooterToLog(cmds CommandBatch, parent []
 	stx, err = su.StrCenterInStr(str, logOps.BannerLen)
 	if err != nil {
 		s := "StrCenterInStr threw error on Job Group Execution Title"
-		isPanic = true
-		return se.New(s, err, isPanic, 802)
+		om.SetFatalError(s, err, 802)
+		return om
 	}
 
 	logOps.writeFileStr(stx, thisParentInfo)
@@ -418,8 +420,8 @@ func (logOps *LogJobGroup) WriteJobGroupFooterToLog(cmds CommandBatch, parent []
 	stx, err = su.StrCenterInStr(str, logOps.BannerLen)
 	if err != nil {
 		s := "StrCenterInStr threw error on AppName AppVersion"
-		isPanic = true
-		return se.New(s, err, isPanic, 803)
+		om.SetFatalError(s, err, 803)
+		return om
 	}
 
 	logOps.writeFileStr(stx, thisParentInfo)
@@ -430,8 +432,8 @@ func (logOps *LogJobGroup) WriteJobGroupFooterToLog(cmds CommandBatch, parent []
 	stx, err = su.StrCenterInStr(str, logOps.BannerLen)
 	if err != nil {
 		s := "StrCenterInStr threw error on Command File Name"
-		isPanic = true
-		return se.New(s, err, isPanic, 804)
+		om.SetFatalError(s, err, 804)
+		return om
 	}
 
 	logOps.writeFileStr(stx, thisParentInfo)
@@ -497,8 +499,8 @@ func (logOps *LogJobGroup) WriteJobGroupFooterToLog(cmds CommandBatch, parent []
 	stx, err = su.StrCenterInStr(str, logOps.BannerLen)
 	if err != nil {
 		s := "StrCenterInStr threw error on End of Job Group Execution"
-		isPanic = true
-		return se.New(s, err, isPanic, 805)
+		om.SetFatalError(s, err, 805)
+		return om
 	}
 
 	logOps.writeFileStr(stx, thisParentInfo)
@@ -506,15 +508,19 @@ func (logOps *LogJobGroup) WriteJobGroupFooterToLog(cmds CommandBatch, parent []
 	logOps.writeFileStr(logOps.Banner1, thisParentInfo)
 
 	// Signal Successful Completion
-	return se.SignalNoErrors()
+	om.SetSuccessfulCompletionMessage("Finished WriteJobGroupFooterToLog", 809)
+
+	return om
 }
 
-func (logOps *LogJobGroup) WriteCmdJobHeaderToLog(job *CmdJob, parent []ErrBaseInfo) SpecErr {
+func (logOps *LogJobGroup) WriteCmdJobHeaderToLog(job *CmdJob, parent []OpsMsgContextInfo) OpsMsgDto {
 
-	se := logOps.baseLogErrConfig(parent, "WriteCmdJobHeaderToLog()")
-	thisParentInfo := se.AddBaseToParentInfo()
+	om := logOps.baseLogErrConfig(parent, "WriteCmdJobHeaderToLog()")
+
+	thisParentInfo := om.GetNewParentHistory()
+
 	su := StringUtility{}
-	isPanic := false
+
 	str := "\n\n"
 
 	logOps.writeFileStr(str, thisParentInfo)
@@ -524,8 +530,8 @@ func (logOps *LogJobGroup) WriteCmdJobHeaderToLog(job *CmdJob, parent []ErrBaseI
 	stx, err := su.StrCenterInStr(str, logOps.BannerLen)
 	if err != nil {
 		s := "StrCenterInStr threw error on Starting Command Job Execution"
-		isPanic = true
-		return se.New(s, err, isPanic, 2501)
+		om.SetFatalError(s, err, 2501)
+		return om
 	}
 
 	logOps.writeFileStr(stx, thisParentInfo)
@@ -534,8 +540,8 @@ func (logOps *LogJobGroup) WriteCmdJobHeaderToLog(job *CmdJob, parent []ErrBaseI
 	stx, err = su.StrCenterInStr(str, logOps.BannerLen)
 	if err != nil {
 		s := "StrCenterInStr threw error on Starting Command Job Display Name"
-		isPanic = true
-		return se.New(s, err, isPanic, 2502)
+		om.SetFatalError(s, err, 2502)
+		return om
 	}
 
 	logOps.writeFileStr(stx, thisParentInfo)
@@ -544,8 +550,8 @@ func (logOps *LogJobGroup) WriteCmdJobHeaderToLog(job *CmdJob, parent []ErrBaseI
 	stx, err = su.StrCenterInStr(str, logOps.BannerLen)
 	if err != nil {
 		s := "StrCenterInStr threw error on Starting Command Job Number"
-		isPanic = true
-		return se.New(s, err, isPanic, 2503)
+		om.SetFatalError(s, err, 2503)
+		return om
 	}
 
 	logOps.writeFileStr(stx, thisParentInfo)
@@ -589,9 +595,10 @@ func (logOps *LogJobGroup) WriteCmdJobHeaderToLog(job *CmdJob, parent []ErrBaseI
 	stx, err = su.StrCenterInStr(str, logOps.BannerLen)
 	if err != nil {
 		s := "StrCenterInStr threw error on Command Job Start Times"
-		isPanic = true
-		return se.New(s, err, isPanic, 2504)
+		om.SetFatalError(s, err, 2504)
+		return om
 	}
+
 	logOps.writeFileStr(stx, thisParentInfo)
 	logOps.writeFileStr(logOps.Banner3, thisParentInfo)
 
@@ -609,15 +616,15 @@ func (logOps *LogJobGroup) WriteCmdJobHeaderToLog(job *CmdJob, parent []ErrBaseI
 	logOps.writeFileStr(logOps.Banner2, thisParentInfo)
 	logOps.writeFileStr("\n\n", thisParentInfo)
 
-	return se.SignalNoErrors()
+	om.SetSuccessfulCompletionMessage("Finished WriteCmdJobHeaderToLog", 2509)
+	return om
 }
 
-func (logOps *LogJobGroup) WriteCmdJobFooterToLog(job *CmdJob, parent []ErrBaseInfo) SpecErr {
+func (logOps *LogJobGroup) WriteCmdJobFooterToLog(job *CmdJob, parent []OpsMsgContextInfo) OpsMsgDto {
 
-	se := logOps.baseLogErrConfig(parent, "WriteCmdJobHeaderToLog()")
-	thisParentInfo := se.AddBaseToParentInfo()
+	om := logOps.baseLogErrConfig(parent, "WriteCmdJobHeaderToLog()")
+	thisParentInfo := om.GetNewParentHistory()
 	su := StringUtility{}
-	isPanic := false
 
 	logOps.writeFileStr("\n\n", thisParentInfo)
 	logOps.writeFileStr(logOps.Banner2, thisParentInfo)
@@ -627,8 +634,8 @@ func (logOps *LogJobGroup) WriteCmdJobFooterToLog(job *CmdJob, parent []ErrBaseI
 	stx, err := su.StrCenterInStr(str, logOps.BannerLen)
 	if err != nil {
 		s := "StrCenterInStr threw error on Completed Command Job Execution"
-		isPanic = true
-		return se.New(s, err, isPanic, 2601)
+		om.SetFatalError(s, err, 2601)
+		return om
 	}
 
 	logOps.writeFileStr(stx, thisParentInfo)
@@ -637,8 +644,8 @@ func (logOps *LogJobGroup) WriteCmdJobFooterToLog(job *CmdJob, parent []ErrBaseI
 	stx, err = su.StrCenterInStr(str, logOps.BannerLen)
 	if err != nil {
 		s := "StrCenterInStr threw error on Completing Command Job Display Name"
-		isPanic = true
-		return se.New(s, err, isPanic, 2602)
+		om.SetFatalError(s, err, 2602)
+		return om
 	}
 
 	logOps.writeFileStr(stx, thisParentInfo)
@@ -647,8 +654,8 @@ func (logOps *LogJobGroup) WriteCmdJobFooterToLog(job *CmdJob, parent []ErrBaseI
 	stx, err = su.StrCenterInStr(str, logOps.BannerLen)
 	if err != nil {
 		s := "StrCenterInStr threw error on Completing Command Job Number"
-		isPanic = true
-		return se.New(s, err, isPanic, 2603)
+		om.SetFatalError(s, err, 2603)
+		return om
 	}
 
 	logOps.writeFileStr(stx, thisParentInfo)
@@ -676,9 +683,10 @@ func (logOps *LogJobGroup) WriteCmdJobFooterToLog(job *CmdJob, parent []ErrBaseI
 	stx, err = su.StrCenterInStr(str, logOps.BannerLen)
 	if err != nil {
 		s := "StrCenterInStr threw error on Command Job Execution Times"
-		isPanic = true
-		return se.New(s, err, isPanic, 2604)
+		om.SetFatalError(s, err, 2604)
+		return om
 	}
+
 	logOps.writeFileStr(stx, thisParentInfo)
 	logOps.writeTabFileStr("UTC Start\\End Times:\n", 1, thisParentInfo)
 	logOps.writeFileStr(logOps.Banner4, thisParentInfo)
@@ -731,8 +739,8 @@ func (logOps *LogJobGroup) WriteCmdJobFooterToLog(job *CmdJob, parent []ErrBaseI
 	stx, err = su.StrCenterInStr(str, logOps.BannerLen)
 	if err != nil {
 		s := "StrCenterInStr threw error on End of Command Job Number"
-		isPanic = true
-		return se.New(s, err, isPanic, 2605)
+		om.SetFatalError(s, err, 2605)
+		return om
 	}
 
 	logOps.writeFileStr(stx, thisParentInfo)
@@ -742,19 +750,22 @@ func (logOps *LogJobGroup) WriteCmdJobFooterToLog(job *CmdJob, parent []ErrBaseI
 
 	job.CmdJobIsCompleted = true
 
-	return se.SignalNoErrors()
+	om.SetSuccessfulCompletionMessage("Finished WriteCmdJobFooterToLog", 2609)
+	return om
 
 }
 
-func (logOps *LogJobGroup) WriteOpsMsgToLog(opsMsg OpsMsgDto, job *CmdJob, parent []ErrBaseInfo) SpecErr {
+func (logOps *LogJobGroup) WriteOpsMsgToLog(opsMsgToLog OpsMsgDto, job *CmdJob, parent []OpsMsgContextInfo) OpsMsgDto {
 
 	job.CmdJobNoOfMsgs++
 
-	se := logOps.baseLogErrConfig(parent, "WriteOpsMsgToLog()")
-	thisParentInfo := se.AddBaseToParentInfo()
+	om := logOps.baseLogErrConfig(parent, "WriteOpsMsgToLog()")
+
+	thisParentInfo := om.GetNewParentHistory()
+
 	su := StringUtility{}
-	isPanic := false
-	opsMsg.SetTime(job.IanaTimeZone)
+
+	opsMsgToLog.SetTimeZone(job.IanaTimeZone)
 
 	logOps.writeFileStr("\n\n", thisParentInfo)
 	logOps.writeFileStr(logOps.Banner7, thisParentInfo)
@@ -764,8 +775,8 @@ func (logOps *LogJobGroup) WriteOpsMsgToLog(opsMsg OpsMsgDto, job *CmdJob, paren
 	stx, err := su.StrCenterInStr(str, logOps.BannerLen)
 	if err != nil {
 		s := "StrCenterInStr threw error on Command Job Execution Message"
-		isPanic = true
-		return se.New(s, err, isPanic, 2701)
+		om.SetFatalError(s, err, 2701)
+		return om
 	}
 
 	logOps.writeFileStr(stx, thisParentInfo)
@@ -778,23 +789,20 @@ func (logOps *LogJobGroup) WriteOpsMsgToLog(opsMsg OpsMsgDto, job *CmdJob, paren
 	str = fmt.Sprintf("Command Message Number: %v\n", job.CmdJobNoOfMsgs)
 	logOps.writeTabFileStr(str, 1, thisParentInfo)
 
-	str = fmt.Sprintf("Command Message Type: %v\n", opsMsg.MsgType)
+	str = fmt.Sprintf("Command Message Type: %v\n", opsMsgToLog.MsgType)
 	logOps.writeTabFileStr(str, 1, thisParentInfo)
 
-	str = fmt.Sprintf("Command Message Level: %v\n", opsMsg.MsgLevel)
+	str = fmt.Sprintf("  Command Message Time UTC: %v\n", opsMsgToLog.MsgTimeUTC.Format(job.CmdJobTimeFormat))
 	logOps.writeTabFileStr(str, 1, thisParentInfo)
 
-	str = fmt.Sprintf("  Command Message Time UTC: %v\n", opsMsg.MsgTimeUTC.Format(job.CmdJobTimeFormat))
+	str = fmt.Sprintf("Command Message Time Local: %v\n", opsMsgToLog.MsgTimeLocal.Format(job.CmdJobTimeFormat))
 	logOps.writeTabFileStr(str, 1, thisParentInfo)
 
-	str = fmt.Sprintf("Command Message Time Local: %v\n", opsMsg.MsgTimeLocal.Format(job.CmdJobTimeFormat))
-	logOps.writeTabFileStr(str, 1, thisParentInfo)
-
-	str = fmt.Sprintf(" Command Message Time Zone: %v\n", opsMsg.LocalTimeZone)
+	str = fmt.Sprintf(" Command Message Time Zone: %v\n", opsMsgToLog.MsgLocalTimeZone)
 	logOps.writeTabFileStr(str, 1, thisParentInfo)
 	logOps.writeFileStr(logOps.Banner5, thisParentInfo)
 
-	lenMsgs := len(opsMsg.Message)
+	lenMsgs := len(opsMsgToLog.Message)
 
 	for i := 0; i < lenMsgs; i++ {
 		if i == 0 {
@@ -804,8 +812,7 @@ func (logOps *LogJobGroup) WriteOpsMsgToLog(opsMsg OpsMsgDto, job *CmdJob, paren
 			logOps.writeFileStr("\n", thisParentInfo)
 		}
 
-		str = opsMsg.Message[i]
-		logOps.writeTabFileStr(str, 2, thisParentInfo)
+		logOps.writeTabFileStr(opsMsgToLog.String(), 2, thisParentInfo)
 
 		if i == (lenMsgs - 1) {
 			logOps.writeFileStr("\n", thisParentInfo)
@@ -820,18 +827,22 @@ func (logOps *LogJobGroup) WriteOpsMsgToLog(opsMsg OpsMsgDto, job *CmdJob, paren
 	stx, err = su.StrCenterInStr(str, logOps.BannerLen)
 	if err != nil {
 		s := "StrCenterInStr threw error on Command Job Execution Message"
-		isPanic = true
-		return se.New(s, err, isPanic, 2701)
+		om.SetFatalError(s, err, 2702)
+		return om
 	}
 
 	logOps.writeFileStr(stx, thisParentInfo)
 	logOps.writeFileStr(logOps.Banner7, thisParentInfo)
 	logOps.writeFileStr("\n\n", thisParentInfo)
 
-	return se.SignalNoErrors()
+	om.SetSuccessfulCompletionMessage("Finished WriteOpsMsgToLog", 2709)
+
+	return om
 }
 
-func (logOps *LogJobGroup) writeTabFileStr(s string, noOfTabs int, parent []ErrBaseInfo) {
+func (logOps *LogJobGroup) writeTabFileStr(s string, noOfTabs int, parent []OpsMsgContextInfo) {
+
+	om := logOps.baseLogErrConfig(parent, "writeTabFileStr()")
 
 	stx := ""
 
@@ -845,33 +856,36 @@ func (logOps *LogJobGroup) writeTabFileStr(s string, noOfTabs int, parent []ErrB
 
 	if err != nil {
 		s := fmt.Sprintf("FilePtr.WriteString threw error on string: '%v'", stx)
-		se :=
-			logOps.baseLogErrConfig(parent, "writeTabFileStr()").
-				New(s, err, true, 1001)
-		panic(se)
+		om.SetFatalError(s, err, 1001)
+		panic(om)
 	}
 
 }
 
-func (logOps *LogJobGroup) writeFileStr(s string, parent []ErrBaseInfo) {
+func (logOps *LogJobGroup) writeFileStr(s string, parent []OpsMsgContextInfo) {
 
 	_, err := logOps.FilePtr.WriteString(s)
 
+	om := logOps.baseLogErrConfig(parent, "writeFileStr()")
+
 	if err != nil {
 		s := fmt.Sprintf("FilePtr.WriteString threw error on string: '%v'", s)
-		se :=
-			logOps.baseLogErrConfig(parent, "writeFileStr()").
-				New(s, err, true, 901)
-		panic(se)
+		om.SetFatalError(s, err, 901)
+		panic(om)
 	}
 
 }
 
 // baseLogErrConfig - Used internally by LogJobGroup
 // methods to set up error messages.
-func (logOps *LogJobGroup) baseLogErrConfig(parent []ErrBaseInfo, funcName string) SpecErr {
+func (logOps *LogJobGroup) baseLogErrConfig(parent []OpsMsgContextInfo, funcName string) OpsMsgDto {
 
-	bi := ErrBaseInfo{}.New(LogGroupConfigSrcFile, funcName, LogGroupConfigErrBlockNo)
+	msgCtx := OpsMsgContextInfo{
+							SourceFileName: LogGroupConfigSrcFile,
+							ParentObjectName: "LogJobGroup",
+							FuncName: funcName,
+							BaseMessageId: LogGroupConfigErrBlockNo,
+						}
 
-	return SpecErr{}.InitializeBaseInfo(parent, bi)
+	return OpsMsgDto{}.InitializeAllContextInfo(parent, msgCtx)
 }

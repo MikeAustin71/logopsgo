@@ -26,74 +26,95 @@ func main() {
 	fmt.Println("Executable Directory: ", s)
 
 	lg := common.LogJobGroup{}
-	parent := common.ErrBaseInfo{}.GetNewParentInfo(srcFileNameLogOpsMain, "main", errBlockNoLogOpsMain)
-	cmds, sea := startUp(&lg, parent)
+	parent := common.OpsMsgContextInfo{
+		SourceFileName: srcFileNameLogOpsMain,
+		ParentObjectName: "",
+		FuncName: "main",
+		BaseMessageId: errBlockNoLogOpsMain,
+	}
 
-	if sea.IsErr {
-		panic(sea)
+	parentHistory := []common.OpsMsgContextInfo{parent}
+
+	cmds, om := startUp(&lg, parentHistory)
+
+	if om.IsFatalError() {
+		panic(om)
 	}
 
 	for _, cmdJob := range cmds.CmdJobs.CmdJobArray {
 
-		se2 := executeJob(&cmdJob, &lg, parent)
+		om2 := executeJob(&cmdJob, &lg, parentHistory)
 
-		if cmdJob.CmdJobIsCompleted && !se2.IsErr {
+		if cmdJob.CmdJobIsCompleted && !om2.IsError() {
 			lg.NoOfJobsCompleted++
 		}
 
 		lg.NoOfJobGroupMsgs += cmdJob.CmdJobNoOfMsgs
 
-		if se2.IsErr && lg.KillAllJobsOnFirstError {
-			doLogWrapUp(&lg, cmds, parent)
-			panic(se2)
+		if om2.IsError() && lg.KillAllJobsOnFirstError {
+			doLogWrapUp(&lg, cmds, parentHistory)
+			panic(om2)
 		}
 	}
 
-	doLogWrapUp(&lg, cmds, parent)
+	doLogWrapUp(&lg, cmds, parentHistory)
 }
 
-func doLogWrapUp(lg *common.LogJobGroup, cmds common.CommandBatch, parent []common.ErrBaseInfo) common.SpecErr {
+func doLogWrapUp(lg *common.LogJobGroup, cmds common.CommandBatch, parent []common.OpsMsgContextInfo) common.OpsMsgDto {
 
-	se := lg.WriteJobGroupFooterToLog(cmds, parent)
+	msgCtx := common.OpsMsgContextInfo{
+							SourceFileName:"main.go",
+							ParentObjectName: "main()",
+							FuncName:" doLogWrapUp",
+							BaseMessageId: errBlockNoLogOpsMain,
+						}
+
+	om1 := common.OpsMsgDto{}.InitializeAllContextInfo(parent, msgCtx)
+
+	om2 := lg.WriteJobGroupFooterToLog(cmds, om1.GetNewParentHistory())
 
 
 	fmt.Println("AppLogPathFileName", lg.AppLogPathFileName)
 
 	fmt.Println("AppLogBanner1", lg.Banner1)
 
-	return se
+	return om2
 }
 
-func startUp(lg *common.LogJobGroup,parent []common.ErrBaseInfo) (common.CommandBatch, common.SpecErr) {
+func startUp(lg *common.LogJobGroup,parent []common.OpsMsgContextInfo) (common.CommandBatch, common.OpsMsgDto) {
 
-	se := baseLogErrConfigMain(parent, "startUp")
-
+	om := baseLogMsgConfigMain(parent, "startUp")
+	parentHistory := om.GetNewParentHistory()
 	parms := common.StartupParameters{}
 
-	appFileParms, sea := parms.AssembleAppPath(appPathFileName, se.AddBaseToParentInfo())
+	appFileParms, om2 := parms.AssembleAppPath(appPathFileName, parentHistory)
 
-	if sea.IsErr {
-		panic(sea)
+	if om2.IsFatalError() {
+		panic(om2)
 	}
 
-	cmdFileParms, sea := parms.AssembleCmdPath(cmdPathFileName, se.AddBaseToParentInfo())
+	cmdFileParms, om3 := parms.AssembleCmdPath(cmdPathFileName, parentHistory)
 
-	if sea.IsErr {
-		panic(sea)
+	if om3.IsFatalError() {
+		panic(om3)
 	}
 
-	appLogPathParms, sea := parms.AssembleLogPath(appLogPathOnly, se.AddBaseToParentInfo())
+	appLogPathParms, om4 := parms.AssembleLogPath(appLogPathOnly, parentHistory)
 
-	cmds, sea := common.ParseXML(cmdFileParms.AbsolutePathFileName, parent)
+	if om4.IsFatalError() {
+		panic(om4)
+	}
 
-	if sea.IsErr {
-		panic(sea)
+	cmds, om5 := common.ParseXML(cmdFileParms.AbsolutePathFileName, parentHistory)
+
+	if om5.IsFatalError() {
+		panic(om5)
 	}
 
 	cmds.FormatCmdParameters()
-	sea = cmds.SetBatchStartTime(se.AddBaseToParentInfo())
-	if sea.IsErr {
-		panic(sea)
+	om6 := cmds.SetBatchStartTime(parentHistory)
+	if om6.IsFatalError() {
+		panic(om6)
 	}
 
 	parms.IanaTimeZone = 	cmds.CmdJobsHdr.IanaTimeZone
@@ -115,64 +136,68 @@ func startUp(lg *common.LogJobGroup,parent []common.ErrBaseInfo) (common.Command
 	parms.NoOfJobs = cmds.CmdJobsHdr.NoOfCmdJobs
 	parms.Dtfmt = &dtf
 
-	sea = lg.New(parms, parent)
+	om7 := lg.New(parms, parentHistory)
 
-	if sea.IsErr {
-		panic(sea)
+	if om7.IsFatalError() {
+		panic(om7)
 	}
 
 	dur := common.DurationUtility{}
 
 	time.Sleep(dur.GetDurationFromSeconds(10))
 
-	sea = cmds.SetBatchEndTime(se.AddBaseToParentInfo())
+	om8 := cmds.SetBatchEndTime(parentHistory)
 
-	if sea.IsErr {
-		panic(sea)
+	if om8.IsFatalError() {
+		panic(om8)
 	}
 
-
-	return cmds, se.SignalNoErrors()
+	om.SetSuccessfulCompletionMessage("Finished startUp()", 79)
+	return cmds, om
 }
 
 
-func executeJob(job *common.CmdJob, logOps *common.LogJobGroup, parent []common.ErrBaseInfo) common.SpecErr {
+func executeJob(job *common.CmdJob, logOps *common.LogJobGroup, parent []common.OpsMsgContextInfo) common.OpsMsgDto {
 
-	se := baseLogErrConfigMain(parent, "executeJob")
-	opsMsg := common.OpsMsgDto{}
-	thisParentInfo := se.AddBaseToParentInfo()
+	om := baseLogMsgConfigMain(parent, "executeJob")
+	thisParentInfo := om.GetNewParentHistory()
+
 	job.SetCmdJobActualStartTime(thisParentInfo)
 
-	sea := logOps.WriteCmdJobHeaderToLog(job, thisParentInfo)
+	om2 := logOps.WriteCmdJobHeaderToLog(job, thisParentInfo)
 
-	if sea.IsErr {
-		om := opsMsg.NewSpecErr(sea)
-		logOps.WriteOpsMsgToLog(om, job, thisParentInfo)
-		return sea
+	if om2.IsFatalError() {
+		logOps.WriteOpsMsgToLog(om2, job, thisParentInfo)
+		return om2
 	}
 
 	time.Sleep(time.Duration(5) * time.Second)
 
 	s := fmt.Sprintf("Completed Job: %v. No Errors!", job.CmdDisplayName)
-	om := opsMsg.NewInfoMsg(s)
+	om.SetInfoMessage(s, 612)
 
 	logOps.WriteOpsMsgToLog(om, job, thisParentInfo)
 
 	job.SetCmdJobActualEndTime(thisParentInfo)
 
-
 	logOps.WriteCmdJobFooterToLog(job, thisParentInfo)
 
-	return se.SignalNoErrors()
+	return om.SignalSuccessfulCompletion(619)
 }
 
 
 // baseLogErrConfig - Used internally by LogJobGroup
 // methods to set up error messages.
-func baseLogErrConfigMain(parent []common.ErrBaseInfo, funcName string) common.SpecErr {
+func baseLogMsgConfigMain(parent []common.OpsMsgContextInfo, funcName string) common.OpsMsgDto {
 
-	bi := common.ErrBaseInfo{}.New(srcFileNameLogOpsMain, funcName, errBlockNoLogOpsMain)
+	opsContext := common.OpsMsgContextInfo{
+									SourceFileName: srcFileNameLogOpsMain,
+									ParentObjectName: "",
+									FuncName: funcName,
+									BaseMessageId: errBlockNoLogOpsMain,
+	}
 
-	return common.SpecErr{}.InitializeBaseInfo(parent, bi)
+
+	return common.OpsMsgDto{}.InitializeAllContextInfo(parent, opsContext)
 }
 

@@ -94,11 +94,16 @@ func (cmdBatch *CommandBatch) assembleCmdElements() {
 
 // SetBatchStartTime - Sets the time at which jobs in this
 // Command Batch began processing.
-func (cmdBatch *CommandBatch) SetBatchStartTime(parent []ErrBaseInfo) SpecErr {
+func (cmdBatch *CommandBatch) SetBatchStartTime(parent []OpsMsgContextInfo) OpsMsgDto {
 
-	bi := ErrBaseInfo{}.New(srcFileNameXMLCmdJobsData, "cmdBatch.SetBatchStartTime", errBlockNoXMLCmdJobsData)
+	msgCtx := OpsMsgContextInfo{
+							SourceFileName: srcFileNameXMLCmdJobsData,
+							ParentObjectName: "CommandBatch",
+							FuncName: "SetBatchStartTime",
+							BaseMessageId: errBlockNoXMLCmdJobsData,
+						}
 
-	se:= SpecErr{}.InitializeBaseInfo(parent, bi)
+	om := OpsMsgDto{}.InitializeAllContextInfo(parent, msgCtx)
 
 	cmdBatch.CmdJobsHdr.CmdBatchStartUTC = time.Now().UTC()
 
@@ -106,23 +111,32 @@ func (cmdBatch *CommandBatch) SetBatchStartTime(parent []ErrBaseInfo) SpecErr {
 
 	if err != nil {
 		s:= fmt.Sprintf("TimeZoneUtility{}.ConvertTz Error - Failed to convert UTC to local Time Zone. Start UTC: %v. Iana Time Zone: %v", cmdBatch.CmdJobsHdr.CmdBatchStartUTC, cmdBatch.CmdJobsHdr.IanaTimeZone)
-		return  se.New(s, err, true, 601)
+		om.SetFatalError(s, err, 601)
+		return  om
 	}
 
 	cmdBatch.CmdJobsHdr.CmdBatchStartTime = tzu.TimeOut
 
-	return se.SignalNoErrors()
+	om.SetSuccessfulCompletionMessage("Finished SetBatchStartTime", 609)
+
+	return om
 }
 
 // SetBatchEndTime - Sets the time at which all jobs
 // in this Command Batch ended and, in addition,
 // computes the elapsed time to complete all jobs in
 // this Command Batch.
-func (cmdBatch *CommandBatch) SetBatchEndTime(parent []ErrBaseInfo) SpecErr {
+func (cmdBatch *CommandBatch) SetBatchEndTime(parent []OpsMsgContextInfo) OpsMsgDto {
 
-	bi := ErrBaseInfo{}.New(srcFileNameXMLCmdJobsData, "cmdBatch.SetBatchEndTime", errBlockNoXMLCmdJobsData)
 
-	se:= SpecErr{}.InitializeBaseInfo(parent, bi)
+	msgCtx := OpsMsgContextInfo{
+							SourceFileName: srcFileNameXMLCmdJobsData,
+							ParentObjectName: "CommandBatch",
+							FuncName: "SetBatchEndTime",
+							BaseMessageId: errBlockNoXMLCmdJobsData,
+	}
+
+	om:= OpsMsgDto{}.InitializeAllContextInfo(parent, msgCtx)
 
 	cmdBatch.CmdJobsHdr.CmdBatchEndUTC = time.Now().UTC()
 
@@ -130,7 +144,8 @@ func (cmdBatch *CommandBatch) SetBatchEndTime(parent []ErrBaseInfo) SpecErr {
 
 	if err != nil {
 		s:= fmt.Sprintf("TimeZoneUtility{}.ConvertTz Error - Failed to convert UTC to local Time Zone. End UTC: %v. Iana Time Zone: %v", cmdBatch.CmdJobsHdr.CmdBatchEndUTC, cmdBatch.CmdJobsHdr.IanaTimeZone)
-		return  se.New(s, err, true, 701)
+		om.SetFatalError(s, err, 701)
+		return  om
 	}
 
 	cmdBatch.CmdJobsHdr.CmdBatchEndTime = tzu.TimeOut
@@ -140,7 +155,8 @@ func (cmdBatch *CommandBatch) SetBatchEndTime(parent []ErrBaseInfo) SpecErr {
 
 	if err != nil {
 		s:= fmt.Sprintf("dutil.SetStartEndTimes() Error - Start Time End Time = Elapsed Time Caclulation Failed. Start UTC: %v. End UTC: %v", cmdBatch.CmdJobsHdr.CmdBatchStartUTC, cmdBatch.CmdJobsHdr.CmdBatchEndUTC)
-		return  se.New(s, err, true, 702)
+		om.SetFatalError(s, err, 702)
+		return  om
 	}
 
 	cmdBatch.CmdJobsHdr.CmdBatchDuration = dutil.TimeDuration
@@ -149,12 +165,14 @@ func (cmdBatch *CommandBatch) SetBatchEndTime(parent []ErrBaseInfo) SpecErr {
 
 	if err != nil {
 		s:= fmt.Sprintf("dutil.GetYearMthDaysTimeAbbrv() Error - Failed to Duration Get Year Mth Days Time. Start UTC: %v. End UTC: %v", cmdBatch.CmdJobsHdr.CmdBatchStartUTC, cmdBatch.CmdJobsHdr.CmdBatchEndUTC)
-		return  se.New(s, err, true, 703)
+		om.SetFatalError(s, err, 703)
+		return  om
 	}
 
 	cmdBatch.CmdJobsHdr.CmdBatchElapsedTime = elapsedTime.DisplayStr
 
-	return se.SignalNoErrors()
+	om.SetSuccessfulCompletionMessage("Finished SetBatchEndTime", 709)
+	return om
 
 }
 
@@ -216,11 +234,17 @@ type CmdJob struct {
 // factor expressed in seconds or to input a specific time at which
 // the command will begin execution. If no start time is signaled
 // by the user, the command will begin execution immediately.
-func (job *CmdJob) SetDelayCmdStartTime(dtf *DateTimeFormatUtility, parent []ErrBaseInfo) SpecErr {
+func (job *CmdJob) SetDelayCmdStartTime(dtf *DateTimeFormatUtility, parentHistory []OpsMsgContextInfo) OpsMsgDto {
 
-	bi := ErrBaseInfo{}.New(srcFileNameXMLCmdJobsData, "CmdJob.SetDelayCmdStartTime", errBlockNoXMLCmdJobsData)
+	msgCtx := OpsMsgContextInfo{
+							SourceFileName: srcFileNameXMLCmdJobsData,
+							ParentObjectName: "CmdJob",
+							FuncName: "SetDelayCmdStartTime",
+							BaseMessageId: errBlockNoXMLCmdJobsData,
+						}
 
-	se:= SpecErr{}.InitializeBaseInfo(parent, bi)
+	//se:= SpecErr{}.InitializeBaseInfo(parent, bi)
+	om:= OpsMsgDto{}.InitializeAllContextInfo(parentHistory, msgCtx)
 
 	durUtil := DurationUtility{}
 	tDto := TimeDto{Years: 3}
@@ -232,7 +256,8 @@ func (job *CmdJob) SetDelayCmdStartTime(dtf *DateTimeFormatUtility, parent []Err
 
 	if err != nil {
 		s:= fmt.Sprintf("TimeZoneUtility{}.ConvertTz() Error - Time Zone Conversion Failure. Delay Start UTC: %v. Local Time Zone: %v", job.DelayStartCmdDateTimeUTC, job.IanaTimeZone)
-		return  se.New(s, err, true, 1201)
+		om.SetFatalError(s, err, 1201)
+		return om
 	}
 
 	job.DelayStartCmdDateTimeValue = tzuUTC.TimeOut
@@ -250,7 +275,8 @@ func (job *CmdJob) SetDelayCmdStartTime(dtf *DateTimeFormatUtility, parent []Err
 
 			if err == nil {
 				job.DelayStartCmdDateTimeValue = tzu.TimeOut
-				return se.SignalNoErrors()
+				om.SetSuccessfulCompletionMessage("Finished SetDelayCmdStartTime", 1298)
+				return om
 			}
 		}
 	}
@@ -261,7 +287,8 @@ func (job *CmdJob) SetDelayCmdStartTime(dtf *DateTimeFormatUtility, parent []Err
 
 		if err != nil {
 			s:= fmt.Sprintf("ParseDateTimeString Error. job.DelayStartCmdDateTime: %v", job.DelayStartCmdDateTime)
-			return  se.New(s, err, true, 1205)
+			om.SetFatalError(s, err, 1205)
+			return  om
 		}
 
 		tzu := TimeZoneUtility{}
@@ -270,46 +297,62 @@ func (job *CmdJob) SetDelayCmdStartTime(dtf *DateTimeFormatUtility, parent []Err
 
 		if err != nil {
 			s:= fmt.Sprintf(" REclassifyTimeWithNewTz Error. tStart: %v. Local Time Zone: %v", tStart, job.IanaTimeZone)
-			return  se.New(s, err, true, 1206)
+			om.SetFatalError(s, err, 1206)
+			return  om
 		}
 
 		job.DelayStartCmdDateTimeUTC = tStartTz.UTC()
 		job.DelayStartCmdDateTimeValue = tStartTz
 	}
 
-	return se.SignalNoErrors()
+	om.SetSuccessfulCompletionMessage("Finished SetDelayCmdStartTime", 1299)
+	return om
 }
 
 // SetCmdJobActualStartTime - Computes and saves the date time
 // at which job execution commenced.
-func (job *CmdJob) SetCmdJobActualStartTime(parent []ErrBaseInfo) SpecErr {
+func (job *CmdJob) SetCmdJobActualStartTime(parent []OpsMsgContextInfo) OpsMsgDto {
 
-	bi := ErrBaseInfo{}.New(srcFileNameXMLCmdJobsData, "CmdJob.SetDelayCmdStartTime", errBlockNoXMLCmdJobsData)
+	msgCtx := OpsMsgContextInfo {
+								SourceFileName: srcFileNameXMLCmdJobsData,
+								ParentObjectName: "CmdJob",
+								FuncName: "SetCmdJobActualStartTime",
+								BaseMessageId: errBlockNoXMLCmdJobsData,
+						}
 
-	se:= SpecErr{}.InitializeBaseInfo(parent, bi)
+	om := OpsMsgDto{}.InitializeAllContextInfo(parent, msgCtx)
 
 	job.CmdJobStartUTC = time.Now().UTC()
+
 	tzu, err := TimeZoneUtility{}.ConvertTz(job.CmdJobStartUTC, job.IanaTimeZone)
 
 	if err != nil {
 		s:= fmt.Sprintf("TimeZoneUtility{}.ConvertTz - Error converting Start Time UTC to local time zone. Start Time %v. Local Time Zone %v.", job.CmdJobStartUTC, job.IanaTimeZone)
-		return  se.New(s, err, true, 1401)
+		om.SetFatalError(s, err, 1401)
+		return  om
 	}
 
 	job.CmdJobStartTimeValue = tzu.TimeOut
-
-	return se.SignalNoErrors()
+	om.SetSuccessfulCompletionMessage("Finished SetCmdJobActualStartTime", 1409)
+	return om
 }
 
 // SetCmdJobActualEndTime - Sets the time at which this job completed processing.
 // In addition, this method also computes the elapsed time required to
 // complete processing of this command job.
 
-func (job *CmdJob) SetCmdJobActualEndTime(parent []ErrBaseInfo) SpecErr {
+func (job *CmdJob) SetCmdJobActualEndTime(parent []OpsMsgContextInfo) OpsMsgDto {
 
-	bi := ErrBaseInfo{}.New(srcFileNameXMLCmdJobsData, "CmdJob.SetCmdJobActualEndTime", errBlockNoXMLCmdJobsData)
+	//bi := ErrBaseInfo{}.New(srcFileNameXMLCmdJobsData, "CmdJob.SetCmdJobActualEndTime", errBlockNoXMLCmdJobsData)
+	msgCtx := OpsMsgContextInfo{
+							SourceFileName: srcFileNameXMLCmdJobsData,
+							ParentObjectName: "CmdJob",
+							FuncName: "SetCmdJobActualEndTime",
+							BaseMessageId: errBlockNoXMLCmdJobsData,
+					}
 
-	se:= SpecErr{}.InitializeBaseInfo(parent, bi)
+	//se:= SpecErr{}.InitializeBaseInfo(parent, bi)
+	om := OpsMsgDto{}.InitializeAllContextInfo(parent, msgCtx)
 
 	job.CmdJobEndUTC = time.Now().UTC()
 
@@ -317,7 +360,8 @@ func (job *CmdJob) SetCmdJobActualEndTime(parent []ErrBaseInfo) SpecErr {
 
 	if err != nil {
 		s:= fmt.Sprintf("TimeZoneUtility{}.ConvertTz - Error converting end time to local time zone. End Time %v. Local Time Zone %v.", job.CmdJobEndUTC, job.IanaTimeZone)
-		return  se.New(s, err, true, 1401)
+		om.SetFatalError(s, err, 1401)
+		return om
 	}
 
 	job.CmdJobEndTimeValue = tzu.TimeOut
@@ -328,7 +372,8 @@ func (job *CmdJob) SetCmdJobActualEndTime(parent []ErrBaseInfo) SpecErr {
 
 	if err != nil {
 		s:= fmt.Sprintf("dutil.SetStartEndTimes - Error calculating duration from start time and end time. Start Time %v. End Time %v.", job.CmdJobEndUTC, job.IanaTimeZone)
-		return  se.New(s, err, true, 1402)
+		om.SetFatalError(s, err, 1402)
+		return om
 	}
 
 	job.CmdJobDuration = dutil.TimeDuration
@@ -337,12 +382,14 @@ func (job *CmdJob) SetCmdJobActualEndTime(parent []ErrBaseInfo) SpecErr {
 
 	if err != nil {
 		s:= fmt.Sprintf("dutil.GetYearMthDaysTimeAbbrv - Duration Calculation Error. Start Time %v. End Time %v.", job.CmdJobEndUTC, job.IanaTimeZone)
-		return  se.New(s, err, true, 1403)
+		om.SetFatalError(s, err, 1403)
+		return  om
 	}
 
 	job.CmdJobElapsedTime = elapsedTime.DisplayStr
 
-	return se.SignalNoErrors()
+	om.SetSuccessfulCompletionMessage("Finished InitializeAllContextInfo", 1409)
+	return om
 }
 
 // CommandArgumentsArray - Holds CmdElement structures
