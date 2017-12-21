@@ -27,12 +27,44 @@ type CommandBatch struct {
 	CmdJobs    CommandJobArray `xml:"CommandJobs"`
 }
 
-func (cmdBatch *CommandBatch) FormatCmdParameters() {
-	cmdBatch.assembleTimeFormats()
-	cmdBatch.assembleCmdElements()
+func (cmdBatch *CommandBatch) FormatCmdParameters(parentHistory []OpsMsgContextInfo) OpsMsgDto {
+
+	msgCtx := OpsMsgContextInfo{
+		SourceFileName: srcFileNameXMLCmdJobsData,
+		ParentObjectName: "CommandBatch",
+		FuncName: "FormatCmdParameters",
+		BaseMessageId: errBlockNoXMLCmdJobsData,
+	}
+
+	om := OpsMsgDto{}.InitializeAllContextInfo(parentHistory, msgCtx)
+
+	om2 := cmdBatch.assembleTimeFormats(om.GetNewParentHistory())
+
+	if om2.IsError() {
+		return om2
+	}
+
+	om3 := cmdBatch.assembleCmdElements(om.GetNewParentHistory())
+
+	if om3.IsError() {
+		return om3
+	}
+
+	om.SetSuccessfulCompletionMessage("Completed FormatCmdParameters", 109)
+
+	return om
 }
 
-func (cmdBatch *CommandBatch) assembleTimeFormats() {
+func (cmdBatch *CommandBatch) assembleTimeFormats(parentHistory []OpsMsgContextInfo) OpsMsgDto {
+
+	msgCtx := OpsMsgContextInfo{
+		SourceFileName: srcFileNameXMLCmdJobsData,
+		ParentObjectName: "CommandBatch",
+		FuncName: "assembleTimeFormats",
+		BaseMessageId: errBlockNoXMLCmdJobsData,
+	}
+
+	om := OpsMsgDto{}.InitializeAllContextInfo(parentHistory, msgCtx)
 
 	if cmdBatch.CmdJobsHdr.IanaTimeZone == "" {
 		cmdBatch.CmdJobsHdr.IanaTimeZone = "Local"
@@ -47,14 +79,25 @@ func (cmdBatch *CommandBatch) assembleTimeFormats() {
 
 	cmdBatch.CmdJobsHdr.StdTimeFormat = logOpsTimeFmt
 
+	om.SetSuccessfulCompletionMessage("Completed assembleTimeFormats", 209)
+
+	return om
 }
 
 // assembleCmdElements - Assembles
 // Command and Command Arguments.
 // These command elements are then
 // stored in struct CombinedExeCommand
-func (cmdBatch *CommandBatch) assembleCmdElements() {
-	var exCmd string
+func (cmdBatch *CommandBatch) assembleCmdElements(parentHistory []OpsMsgContextInfo) OpsMsgDto {
+
+	msgCtx := OpsMsgContextInfo{
+		SourceFileName: srcFileNameXMLCmdJobsData,
+		ParentObjectName: "CommandBatch",
+		FuncName: "assembleTimeFormats",
+		BaseMessageId: errBlockNoXMLCmdJobsData,
+	}
+
+	om := OpsMsgDto{}.InitializeAllContextInfo(parentHistory, msgCtx)
 
 	cmdBatch.CmdJobsHdr.NoOfCmdJobs = len(cmdBatch.CmdJobs.CmdJobArray)
 
@@ -62,10 +105,6 @@ func (cmdBatch *CommandBatch) assembleCmdElements() {
 
 	for i := 0; i < lJobs; i++ {
 		job := &cmdBatch.CmdJobs.CmdJobArray[i]
-
-		exCmd = ""
-
-		lCmdArgs := len(job.CmdArguments.CmdArgs)
 
 		// Set Job No.
 		job.CmdJobNo = i + 1
@@ -76,20 +115,130 @@ func (cmdBatch *CommandBatch) assembleCmdElements() {
 		// sync time formats
 		job.CmdJobTimeFormat = cmdBatch.CmdJobsHdr.StdTimeFormat
 
-		for k := 0; k < lCmdArgs; k++ {
-			job.CmdArguments.CmdArgs[k] = strings.TrimRight(strings.TrimLeft(job.CmdArguments.CmdArgs[k], " "), " ")
-			exCmd += job.CmdArguments.CmdArgs[k] + " "
+		omx := cmdBatch.assembleCmdArgs(job, om.GetNewParentHistory())
+
+		if omx.IsError() {
+			return omx
+		}
+
+		omy := cmdBatch.assembleInputArgs(job, om.GetNewParentHistory())
+
+		if omy.IsError() {
+			return omy
 		}
 
 		job.ExeCommand = strings.TrimLeft(strings.TrimRight(job.ExeCommand, " "), " ")
 
-		job.CombinedExeCommand =
-			job.ExeCommand + " " + exCmd
+		if len(job.CombinedArguments) > 0 {
+			job.CombinedExeCommand =
+				job.ExeCommand + " " + job.CombinedArguments
+		} else {
+			job.CombinedExeCommand = job.ExeCommand
+		}
 
-		job.CombinedArguments = exCmd
 	}
 
-	return
+	om.SetSuccessfulCompletionMessage("Finished assembleCmdElements", 309)
+
+	return om
+}
+
+// assembleCmdArgs - Processes Command Arguments located in job.CmdArguments.CmdArgs
+func (cmdBatch *CommandBatch) assembleCmdArgs(job *CmdJob, parentHistory []OpsMsgContextInfo) OpsMsgDto {
+
+	msgCtx := OpsMsgContextInfo{
+		SourceFileName: srcFileNameXMLCmdJobsData,
+		ParentObjectName: "CommandBatch",
+		FuncName: "assembleCmdArgs",
+		BaseMessageId: errBlockNoXMLCmdJobsData,
+	}
+
+	om := OpsMsgDto{}.InitializeAllContextInfo(parentHistory, msgCtx)
+
+	job.CombinedArguments = ""
+
+	lCmdArgs := len(job.CmdArguments.CmdArgs)
+
+	if lCmdArgs == 0 {
+		om.SetSuccessfulCompletionMessage("Finished assembleCmdArgs", 408)
+		return om
+	}
+
+	cmdArgs := ""
+	doCmdArgsExist := false
+
+	for i := 0; i < lCmdArgs; i++ {
+		job.CmdArguments.CmdArgs[i] = strings.TrimRight(strings.TrimLeft(job.CmdArguments.CmdArgs[i], " "), " ")
+
+		if job.CmdArguments.CmdArgs[i] != "" {
+
+			if i==0 {
+				cmdArgs += job.CmdArguments.CmdArgs[i]
+			} else {
+				cmdArgs += " " + job.CmdArguments.CmdArgs[i]
+			}
+			doCmdArgsExist = true
+		}
+	}
+
+	if doCmdArgsExist {
+		job.CombinedArguments = cmdArgs
+	} else {
+		job.CmdArguments.CmdArgs = make([]string, 0, 0)
+	}
+
+	om.SetSuccessfulCompletionMessage("Finished assembleCmdArgs", 409)
+	return om
+}
+
+// assembleInputArgs -
+func (cmdBatch *CommandBatch) assembleInputArgs(job *CmdJob, parentHistory []OpsMsgContextInfo) OpsMsgDto {
+
+	msgCtx := OpsMsgContextInfo{
+		SourceFileName: srcFileNameXMLCmdJobsData,
+		ParentObjectName: "CommandBatch",
+		FuncName: "assembleInputArgs",
+		BaseMessageId: errBlockNoXMLCmdJobsData,
+	}
+
+	om := OpsMsgDto{}.InitializeAllContextInfo(parentHistory, msgCtx)
+
+	job.CombinedInputArguments = ""
+
+	lCmdInputs := len(job.CmdInputs.InputArgs)
+
+	if lCmdInputs == 0 {
+		om.SetSuccessfulCompletionMessage("Finished assembleInputArgs", 508)
+		return om
+	}
+
+	cmdInputs := ""
+	doCmdInputsExist := false
+
+	for i:=0; i < lCmdInputs; i++ {
+		job.CmdInputs.InputArgs[i] = strings.TrimRight(strings.TrimLeft(job.CmdInputs.InputArgs[i], " "), " ")
+
+		if job.CmdInputs.InputArgs[i] != "" {
+
+			if i==0 {
+				cmdInputs += job.CmdInputs.InputArgs[i]
+			} else {
+				cmdInputs += " " + job.CmdInputs.InputArgs[i]
+			}
+
+			doCmdInputsExist = true
+		}
+
+	}
+
+	if doCmdInputsExist {
+		job.CombinedInputArguments = cmdInputs
+	} else {
+		job.CmdInputs.InputArgs = make([]string, 0, 0)
+	}
+
+	om.SetSuccessfulCompletionMessage("Finished assembleInputArgs", 509)
+	return om
 }
 
 // SetBatchStartTime - Sets the time at which jobs in this
@@ -217,6 +366,8 @@ type CmdJob struct {
 	ExeCommand                 string `xml:"ExeCommand"`
 	CombinedArguments          string
 	CmdArguments               CommandArgumentsArray `xml:"CmdArguments"`
+	CmdInputs									 CommandInputsArray	`xml:"CmdInputs"`
+	CombinedInputArguments		 string
 	IanaTimeZone               string
 	CmdJobTimeFormat           string
 	CmdJobStartTimeValue       time.Time
@@ -395,4 +546,8 @@ func (job *CmdJob) SetCmdJobActualEndTime(parent []OpsMsgContextInfo) OpsMsgDto 
 // CommandArgumentsArray - Holds CmdElement structures
 type CommandArgumentsArray struct {
 	CmdArgs []string `xml:"CmdArg"`
+}
+
+type CommandInputsArray struct {
+	InputArgs [] string `xml:"InputArg"`
 }

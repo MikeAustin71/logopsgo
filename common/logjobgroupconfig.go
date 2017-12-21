@@ -262,9 +262,9 @@ func (logOps *LogJobGroup) writeJobGroupHeaderToLog(parent []OpsMsgContextInfo) 
 
 	su := StringUtility{}
 	stx = fmt.Sprintf("App Name: %v  AppVersion: %v \n", logOps.AppName, logOps.AppVersion)
-	str, err = su.StrCenterInStr(stx, logOps.BannerLen)
+	str, err = su.StrCenterInStrLeft(stx, logOps.BannerLen)
 	if err != nil {
-		s := "StrCenterInStr threw error on AppName AppVersion"
+		s := "StrCenterInStrLeft threw error on AppName AppVersion"
 		om.SetFatalError(s, err, 302)
 		return om
 	}
@@ -275,7 +275,7 @@ func (logOps *LogJobGroup) writeJobGroupHeaderToLog(parent []OpsMsgContextInfo) 
 
 	str = fmt.Sprintf("Execution Job Group Command File: %v \n", logOps.CommandFileName)
 
-	stx, err = su.StrCenterInStr(str, logOps.BannerLen)
+	stx, err = su.StrCenterInStrLeft(str, logOps.BannerLen)
 	if err != nil {
 		s := "StrCenterInStr threw error on Command File Name"
 		om.SetFatalError(s, err, 303)
@@ -286,7 +286,7 @@ func (logOps *LogJobGroup) writeJobGroupHeaderToLog(parent []OpsMsgContextInfo) 
 
 	str = fmt.Sprintf("Starting Execution of %v Jobs. \n", logOps.AppNoOfJobs)
 
-	stx, err = su.StrCenterInStr(str, logOps.BannerLen)
+	stx, err = su.StrCenterInStrLeft(str, logOps.BannerLen)
 	if err != nil {
 		s := "StrCenterInStr threw error on Number of Jobs Executed"
 		om.SetFatalError(s, err, 304)
@@ -313,32 +313,24 @@ func (logOps *LogJobGroup) writeJobGroupHeaderToLog(parent []OpsMsgContextInfo) 
 
 	logOps.writeTabFileStr(str, 0, parent)
 
-	logOps.writeFileStr(logOps.Banner2, thisParentInfo)
-	logOps.writeFileStr("\n", thisParentInfo)
 	logOps.writeFileStr(logOps.Banner3, thisParentInfo)
-	logOps.writeFileStr("\n", thisParentInfo)
 
 	str = "Initial Application Path: \n"
 
 	logOps.writeTabFileStr(str, 1, thisParentInfo)
 
-	str = logOps.AppPath + "\n"
+	str = logOps.AppPath + "\n\n"
 
 	logOps.writeTabFileStr(str, 2, thisParentInfo)
 
-	logOps.writeFileStr(logOps.Banner3, thisParentInfo)
-	logOps.writeFileStr("\n", thisParentInfo)
 
 	str = "This Log File:\n"
 
 	logOps.writeTabFileStr(str, 1, thisParentInfo)
 
-	str = logOps.AppLogPathFileName + "\n"
+	str = logOps.AppLogPathFileName + "\n\n"
 
 	logOps.writeTabFileStr(str, 2, thisParentInfo)
-
-	logOps.writeFileStr(logOps.Banner3, thisParentInfo)
-	logOps.writeFileStr("\n", thisParentInfo)
 
 	str = "Base Start Directory:\n"
 	logOps.writeTabFileStr(str, 1, thisParentInfo)
@@ -346,9 +338,6 @@ func (logOps *LogJobGroup) writeJobGroupHeaderToLog(parent []OpsMsgContextInfo) 
 	str = logOps.BaseStartDir + "\n"
 	logOps.writeTabFileStr(str, 2, thisParentInfo)
 	logOps.writeFileStr(logOps.Banner3, thisParentInfo)
-
-	logOps.writeFileStr("\n", thisParentInfo)
-	logOps.writeFileStr(logOps.Banner2, thisParentInfo)
 
 	str = fmt.Sprintf("Number Of Old Log Files Deleted: %v \n", logOps.NoOfLogFilesPurged)
 	logOps.writeTabFileStr(str, 1, thisParentInfo)
@@ -396,6 +385,7 @@ func (logOps *LogJobGroup) WriteJobGroupFooterToLog(cmds CommandBatch, parent []
 	if logOps.FilePtr == nil {
 		s := "logOps.FilePtr was not correctly initialized! logOps.FilePtr *os.File pointer is nil!"
 		om.SetFatalErrorMessage(s, 801)
+		om.LogMsgToFile(logOps.FilePtr)
 		return om
 	}
 
@@ -412,6 +402,7 @@ func (logOps *LogJobGroup) WriteJobGroupFooterToLog(cmds CommandBatch, parent []
 	if err != nil {
 		s := "StrCenterInStr threw error on Job Group Execution Title"
 		om.SetFatalError(s, err, 802)
+		om.LogMsgToFile(logOps.FilePtr)
 		return om
 	}
 
@@ -423,6 +414,7 @@ func (logOps *LogJobGroup) WriteJobGroupFooterToLog(cmds CommandBatch, parent []
 	if err != nil {
 		s := "StrCenterInStr threw error on AppName AppVersion"
 		om.SetFatalError(s, err, 803)
+		om.LogMsgToFile(logOps.FilePtr)
 		return om
 	}
 
@@ -435,6 +427,7 @@ func (logOps *LogJobGroup) WriteJobGroupFooterToLog(cmds CommandBatch, parent []
 	if err != nil {
 		s := "StrCenterInStr threw error on Command File Name"
 		om.SetFatalError(s, err, 804)
+		om.LogMsgToFile(logOps.FilePtr)
 		return om
 	}
 
@@ -445,16 +438,14 @@ func (logOps *LogJobGroup) WriteJobGroupFooterToLog(cmds CommandBatch, parent []
 
 	logOps.writeTabFileStr(stx, 1, thisParentInfo)
 
-	stx = logOps.LeftTab + fmt.Sprintf("Number of Messages Logged: %v \n", logOps.NoOfJobGroupMsgs)
+	stx =  fmt.Sprintf("Number of Messages Logged: %v \n", logOps.NoOfJobGroupMsgs)
 
-	logOps.writeFileStr(stx, thisParentInfo)
+	logOps.writeTabFileStr(stx, 1, thisParentInfo)
 
 	logOps.writeFileStr(logOps.Banner3, thisParentInfo)
-	logOps.writeFileStr(logOps.Banner4, thisParentInfo)
 
 	dt := DateTimeUtility{}
 
-	logOps.writeFileStr("\n", thisParentInfo)
 	stx = "Job Group Execution Times:\n"
 	logOps.writeTabFileStr(stx, 1, thisParentInfo)
 	logOps.writeFileStr(logOps.Banner4, thisParentInfo)
@@ -486,29 +477,28 @@ func (logOps *LogJobGroup) WriteJobGroupFooterToLog(cmds CommandBatch, parent []
 	logOps.writeTabFileStr(stx, 1, thisParentInfo)
 
 	logOps.writeFileStr(logOps.Banner4, thisParentInfo)
-	logOps.writeFileStr("\n", thisParentInfo)
 
-	logOps.writeFileStr(logOps.Banner3, thisParentInfo)
 	stx = "JobGroup Elapsed Time:\n"
 	logOps.writeTabFileStr(stx, 1, thisParentInfo)
-	logOps.writeFileStr(logOps.Banner4, thisParentInfo)
+	logOps.writeFileStr(logOps.Banner6, thisParentInfo)
 	stx = cmds.CmdJobsHdr.CmdBatchElapsedTime + "\n"
 	logOps.writeTabFileStr(stx, 1, thisParentInfo)
-	logOps.writeFileStr(logOps.Banner4, thisParentInfo)
-	logOps.writeFileStr(logOps.Banner3, thisParentInfo)
-	logOps.writeFileStr("\n", thisParentInfo)
-	logOps.writeFileStr(logOps.Banner1, thisParentInfo)
+	logOps.writeFileStr(logOps.Banner6, thisParentInfo)
+
+	logOps.writeFileStr("\n\n", thisParentInfo)
 
 	str = "End of Job Group Execution\n"
 	stx, err = su.StrCenterInStr(str, logOps.BannerLen)
 	if err != nil {
 		s := "StrCenterInStr threw error on End of Job Group Execution"
 		om.SetFatalError(s, err, 805)
+		om.LogMsgToFile(logOps.FilePtr)
 		return om
 	}
 
 	logOps.writeFileStr(stx, thisParentInfo)
 
+	logOps.writeFileStr(logOps.Banner1, thisParentInfo)
 	logOps.writeFileStr(logOps.Banner1, thisParentInfo)
 
 	// Signal Successful Completion
@@ -531,30 +521,34 @@ func (logOps *LogJobGroup) WriteCmdJobHeaderToLog(job *CmdJob, parent []OpsMsgCo
 	logOps.writeFileStr(logOps.Banner2, thisParentInfo)
 	logOps.writeFileStr(logOps.Banner2, thisParentInfo)
 	str = "Starting Command Job Execution\n"
-	stx, err := su.StrCenterInStr(str, logOps.BannerLen)
+	stx, err := su.StrCenterInStrLeft(str, logOps.BannerLen)
 	if err != nil {
-		s := "StrCenterInStr threw error on Starting Command Job Execution"
+		s := "StrCenterInStrLeft threw error on Starting Command Job Execution"
 		om.SetFatalError(s, err, 2501)
+		om.LogMsgToFile(logOps.FilePtr)
 		return om
 	}
 
 	logOps.writeFileStr(stx, thisParentInfo)
 
 	str = fmt.Sprintf("Command Job Name: %v\n", job.CmdDisplayName)
-	stx, err = su.StrCenterInStr(str, logOps.BannerLen)
+	stx, err = su.StrCenterInStrLeft(str, logOps.BannerLen)
 	if err != nil {
 		s := "StrCenterInStr threw error on Starting Command Job Display Name"
 		om.SetFatalError(s, err, 2502)
+		om.LogMsgToFile(logOps.FilePtr)
 		return om
 	}
 
 	logOps.writeFileStr(stx, thisParentInfo)
 
 	str = fmt.Sprintf("Command Job Number: %v\n", job.CmdJobNo)
-	stx, err = su.StrCenterInStr(str, logOps.BannerLen)
+	stx, err = su.StrCenterInStrLeft(str, logOps.BannerLen)
 	if err != nil {
-		s := "StrCenterInStr threw error on Starting Command Job Number"
+		s := "StrCenterInStrLeft threw error on Starting Command Job Number"
 		om.SetFatalError(s, err, 2503)
+		om.LogMsgToFile(logOps.FilePtr)
+
 		return om
 	}
 
@@ -584,9 +578,55 @@ func (logOps *LogJobGroup) WriteCmdJobHeaderToLog(job *CmdJob, parent []OpsMsgCo
 	str = fmt.Sprintf("          Execution Command: %v\n", job.ExeCommand)
 	logOps.writeTabFileStr(str, 1, thisParentInfo)
 
-	str = fmt.Sprintf("          Command Arguments: %v\n", job.CombinedArguments)
-	logOps.writeTabFileStr(str, 1, thisParentInfo)
+	largs := len(job.CmdArguments.CmdArgs)
+
+	if largs < 1 {
+    str = "          Command Arguments: NO COMMAND ARGUMENTS PROVIDED\n"
+		logOps.writeTabFileStr(str, 1, thisParentInfo)
+
+	}	else if len(job.CombinedArguments) < 50 {
+		str = fmt.Sprintf("          Command Arguments: %v\n", job.CombinedArguments)
+		logOps.writeTabFileStr(str, 1, thisParentInfo)
+	} else {
+		logOps.writeFileStr(logOps.Banner4, thisParentInfo)
+		str = "Command Arguments:\n"
+		logOps.writeTabFileStr(str, 1, thisParentInfo)
+		logOps.writeFileStr(logOps.Banner4, thisParentInfo)
+		for i:= 0; i < largs; i++ {
+		 	str = job.CmdArguments.CmdArgs[i] + "\n"
+			logOps.writeTabFileStr(str, 3, thisParentInfo)
+		}
+
+		logOps.writeFileStr(logOps.Banner4 + "\n", thisParentInfo)
+	}
+
+	largs = len(job.CmdInputs.InputArgs)
+
+	if largs < 1 {
+		str = "            Input Arguments: NO INPUT ARGUMENTS PROVIDED\n"
+		logOps.writeTabFileStr(str, 1, thisParentInfo)
+
+	} else if len(job.CombinedInputArguments) < 50 {
+		str = fmt.Sprintf("            Input Arguments: %v\n", job.CombinedInputArguments)
+		logOps.writeTabFileStr(str, 1, thisParentInfo)
+
+	} else {
+
+		str = "Input Arguments:\n"
+		logOps.writeTabFileStr(str, 1, thisParentInfo)
+		logOps.writeFileStr(logOps.Banner4, thisParentInfo)
+
+		for i:= 0; i < largs; i++ {
+			str = job.CmdInputs.InputArgs[i] + "\n"
+			logOps.writeTabFileStr(str, 3, thisParentInfo)
+		}
+
+		logOps.writeTabFileStr("\n", 1, thisParentInfo)
+	}
+
+
 	logOps.writeFileStr(logOps.Banner3, thisParentInfo)
+
 
 	str = "Command Job Start Times\n"
 	stx, err = su.StrCenterInStr(str, logOps.BannerLen)
@@ -599,16 +639,15 @@ func (logOps *LogJobGroup) WriteCmdJobHeaderToLog(job *CmdJob, parent []OpsMsgCo
 	logOps.writeFileStr(stx, thisParentInfo)
 	logOps.writeFileStr(logOps.Banner3, thisParentInfo)
 
-	str = fmt.Sprintf("  Cmd Job Start Time UTC: %v\n", job.CmdJobStartUTC.Format(job.CmdJobTimeFormat))
+	str = fmt.Sprintf("     Cmd Job Start Time UTC: %v\n", job.CmdJobStartUTC.Format(job.CmdJobTimeFormat))
 	logOps.writeTabFileStr(str, 1, thisParentInfo)
 
-	str = fmt.Sprintf("Cmd Job Start Time Local: %v\n", job.CmdJobStartTimeValue.Format(job.CmdJobTimeFormat))
+	str = fmt.Sprintf("   Cmd Job Start Time Local: %v\n", job.CmdJobStartTimeValue.Format(job.CmdJobTimeFormat))
 	logOps.writeTabFileStr(str, 1, thisParentInfo)
 
 	tzLocal, _ := job.CmdJobStartTimeValue.Zone()
-	str = fmt.Sprintf(" Cmd Job Local Time Zone: %v - %v\n", job.IanaTimeZone, tzLocal)
+	str = fmt.Sprintf("    Cmd Job Local Time Zone: %v - %v\n", job.IanaTimeZone, tzLocal)
 	logOps.writeTabFileStr(str, 1, thisParentInfo)
-
 
 	logOps.writeFileStr(logOps.Banner2, thisParentInfo)
 	logOps.writeFileStr(logOps.Banner2, thisParentInfo)
@@ -627,12 +666,22 @@ func (logOps *LogJobGroup) WriteCmdJobFooterToLog(job *CmdJob, parent []OpsMsgCo
 	logOps.writeFileStr("\n\n", thisParentInfo)
 	logOps.writeFileStr(logOps.Banner2, thisParentInfo)
 	logOps.writeFileStr(logOps.Banner2, thisParentInfo)
-	logOps.writeFileStr(logOps.Banner5, thisParentInfo)
 	str := "Completed Command Job Execution\n"
 	stx, err := su.StrCenterInStr(str, logOps.BannerLen)
 	if err != nil {
 		s := "StrCenterInStr threw error on Completed Command Job Execution"
 		om.SetFatalError(s, err, 2601)
+		om.LogMsgToFile(logOps.FilePtr)
+		return om
+	}
+	logOps.writeFileStr(stx, thisParentInfo)
+	logOps.writeFileStr(logOps.Banner5, thisParentInfo)
+	str = "Job Execution Results\n"
+	stx, err = su.StrCenterInStr(str, logOps.BannerLen)
+	if err != nil {
+		s := "StrCenterInStr threw error on Completed Command Job Execution"
+		om.SetFatalError(s, err, 2602)
+		om.LogMsgToFile(logOps.FilePtr)
 		return om
 	}
 
@@ -642,7 +691,8 @@ func (logOps *LogJobGroup) WriteCmdJobFooterToLog(job *CmdJob, parent []OpsMsgCo
 	stx, err = su.StrCenterInStr(str, logOps.BannerLen)
 	if err != nil {
 		s := "StrCenterInStr threw error on Completing Command Job Display Name"
-		om.SetFatalError(s, err, 2602)
+		om.SetFatalError(s, err, 2603)
+		om.LogMsgToFile(logOps.FilePtr)
 		return om
 	}
 
@@ -652,7 +702,8 @@ func (logOps *LogJobGroup) WriteCmdJobFooterToLog(job *CmdJob, parent []OpsMsgCo
 	stx, err = su.StrCenterInStr(str, logOps.BannerLen)
 	if err != nil {
 		s := "StrCenterInStr threw error on Completing Command Job Number"
-		om.SetFatalError(s, err, 2603)
+		om.SetFatalError(s, err, 2604)
+		om.LogMsgToFile(logOps.FilePtr)
 		return om
 	}
 
@@ -661,31 +712,71 @@ func (logOps *LogJobGroup) WriteCmdJobFooterToLog(job *CmdJob, parent []OpsMsgCo
 	logOps.writeFileStr(logOps.Banner5, thisParentInfo)
 	logOps.writeFileStr(logOps.Banner2, thisParentInfo)
 
-	logOps.writeFileStr("\n", thisParentInfo)
-	logOps.writeFileStr(logOps.Banner3, thisParentInfo)
+
 	str = fmt.Sprintf("Cmd Job Description: %v\n", job.CmdDescription)
 	logOps.writeTabFileStr(str, 1, thisParentInfo)
-	logOps.writeFileStr(logOps.Banner3, thisParentInfo)
-	logOps.writeFileStr(logOps.Banner4, thisParentInfo)
 
-	str = fmt.Sprintf("Execution Command: %v\n", job.ExeCommand)
+	str = fmt.Sprintf("  Execution Command: %v\n", job.ExeCommand)
 	logOps.writeTabFileStr(str, 1, thisParentInfo)
 
-	str = fmt.Sprintf("Command Arguments: %v\n", job.CombinedArguments)
-	logOps.writeTabFileStr(str, 1, thisParentInfo)
+	largs := len(job.CmdArguments.CmdArgs)
+
+	if largs < 1 {
+		str = "          Command Arguments: NO COMMAND ARGUMENTS PROVIDED\n"
+		logOps.writeTabFileStr(str, 1, thisParentInfo)
+
+	}	else if len(job.CombinedArguments) < 50 {
+		str = fmt.Sprintf("          Command Arguments: %v\n", job.CombinedArguments)
+		logOps.writeTabFileStr(str, 1, thisParentInfo)
+	} else {
+		logOps.writeFileStr(logOps.Banner4, thisParentInfo)
+		str = "Command Arguments:\n"
+		logOps.writeTabFileStr(str, 1, thisParentInfo)
+		logOps.writeFileStr(logOps.Banner4, thisParentInfo)
+		for i:= 0; i < largs; i++ {
+			str = job.CmdArguments.CmdArgs[i] + "\n"
+			logOps.writeTabFileStr(str, 3, thisParentInfo)
+		}
+
+		logOps.writeFileStr(logOps.Banner4 + "\n", thisParentInfo)
+	}
+
+	largs = len(job.CmdInputs.InputArgs)
+
+	if largs < 1 {
+		str = "            Input Arguments: NO INPUT ARGUMENTS PROVIDED\n"
+		logOps.writeTabFileStr(str, 1, thisParentInfo)
+
+	} else if len(job.CombinedInputArguments) < 50 {
+		str = fmt.Sprintf("            Input Arguments: %v\n", job.CombinedInputArguments)
+		logOps.writeTabFileStr(str, 1, thisParentInfo)
+
+	} else {
+
+		str = "Input Arguments:\n"
+		logOps.writeTabFileStr(str, 1, thisParentInfo)
+		logOps.writeFileStr(logOps.Banner4, thisParentInfo)
+
+		for i:= 0; i < largs; i++ {
+			str = job.CmdInputs.InputArgs[i] + "\n"
+			logOps.writeTabFileStr(str, 3, thisParentInfo)
+		}
+
+		logOps.writeTabFileStr("\n", 1, thisParentInfo)
+	}
+
 	logOps.writeFileStr(logOps.Banner4, thisParentInfo)
-	logOps.writeFileStr("\n", thisParentInfo)
-	logOps.writeFileStr(logOps.Banner3, thisParentInfo)
-	logOps.writeFileStr(logOps.Banner3, thisParentInfo)
 	str = "Command Job Execution Times\n"
 	stx, err = su.StrCenterInStr(str, logOps.BannerLen)
 	if err != nil {
 		s := "StrCenterInStr threw error on Command Job Execution Times"
-		om.SetFatalError(s, err, 2604)
+		om.SetFatalError(s, err, 2605)
+		om.LogMsgToFile(logOps.FilePtr)
 		return om
 	}
 
 	logOps.writeFileStr(stx, thisParentInfo)
+	logOps.writeFileStr(logOps.Banner4, thisParentInfo)
 	logOps.writeTabFileStr("UTC Start\\End Times:\n", 1, thisParentInfo)
 	logOps.writeFileStr(logOps.Banner4, thisParentInfo)
 
@@ -696,8 +787,6 @@ func (logOps *LogJobGroup) WriteCmdJobFooterToLog(job *CmdJob, parent []OpsMsgCo
 	logOps.writeTabFileStr(str, 1, thisParentInfo)
 
 	logOps.writeFileStr(logOps.Banner4, thisParentInfo)
-
-	logOps.writeFileStr("\n", thisParentInfo)
 
 	logOps.writeTabFileStr("Local Start\\End Times:\n", 1, thisParentInfo)
 
@@ -712,11 +801,8 @@ func (logOps *LogJobGroup) WriteCmdJobFooterToLog(job *CmdJob, parent []OpsMsgCo
 	tzLocal, _ := job.CmdJobEndTimeValue.Zone()
 	str = fmt.Sprintf(" Cmd Job Local Time Zone: %v - %v\n", job.IanaTimeZone, tzLocal)
 	logOps.writeTabFileStr(str, 1, thisParentInfo)
-	logOps.writeFileStr(logOps.Banner4, thisParentInfo)
-	logOps.writeFileStr("\n", thisParentInfo)
 
-	logOps.writeFileStr(logOps.Banner6, thisParentInfo)
-	logOps.writeFileStr("\n", thisParentInfo)
+	logOps.writeFileStr(logOps.Banner4, thisParentInfo)
 
 	str = "Cmd Job Execution Elapsed Time:\n"
 	logOps.writeTabFileStr(str, 1, thisParentInfo)
@@ -724,13 +810,10 @@ func (logOps *LogJobGroup) WriteCmdJobFooterToLog(job *CmdJob, parent []OpsMsgCo
 
 	str = fmt.Sprintf("%v\n", job.CmdJobElapsedTime)
 	logOps.writeTabFileStr(str, 2, thisParentInfo)
-	logOps.writeFileStr(logOps.Banner6, thisParentInfo)
-	logOps.writeFileStr("\n\n", thisParentInfo)
-	logOps.writeFileStr(logOps.Banner4, thisParentInfo)
+	logOps.writeFileStr(logOps.Banner6 + "\n", thisParentInfo)
+
 	str = fmt.Sprintf("Number of Messages: %v\n", job.CmdJobNoOfMsgs)
 	logOps.writeTabFileStr(str, 1, thisParentInfo)
-	logOps.writeFileStr(logOps.Banner4, thisParentInfo)
-	logOps.writeFileStr("\n", thisParentInfo)
 
 	logOps.writeFileStr(logOps.Banner2, thisParentInfo)
 
@@ -738,7 +821,8 @@ func (logOps *LogJobGroup) WriteCmdJobFooterToLog(job *CmdJob, parent []OpsMsgCo
 	stx, err = su.StrCenterInStr(str, logOps.BannerLen)
 	if err != nil {
 		s := "StrCenterInStr threw error on End of Command Job Number"
-		om.SetFatalError(s, err, 2605)
+		om.SetFatalError(s, err, 2606)
+		om.LogMsgToFile(logOps.FilePtr)
 		return om
 	}
 

@@ -12,18 +12,10 @@ const (
 	cmdPathFileName = "D:/go/work/src/MikeAustin71/logopsgo/app/cmdrXCmds.xml"
 	appPathFileName = "D:/go/work/src/MikeAustin71/logopsgo/app/cmdrX.exe"
 	appLogPathOnly = "D:/go/work/src/MikeAustin71/logopsgo/app/cmdrX/alog.log"
+	appBanner1 = "===================================================================="
 )
 
 func main() {
-
-	fh := common.FileHelper{}
-	s, _ := fh.GetCurrentDir()
-
-	fmt.Println("Current Directory: ", s)
-
-	s, _ = fh.GetExecutablePathFileName()
-
-	fmt.Println("Executable Directory: ", s)
 
 	lg := common.LogJobGroup{}
 	parent := common.OpsMsgContextInfo{
@@ -33,27 +25,58 @@ func main() {
 		BaseMessageId: errBlockNoLogOpsMain,
 	}
 
+	om := common.OpsMsgDto{}.InitializeWithMessageContext(parent)
+
+	fh := common.FileHelper{}
+
+	s, err := fh.GetCurrentDir()
+
+	if err!=nil {
+		om.SetFatalError("fh.GetCurrentDir() FAILED!\n", err, 1)
+		om.PrintToConsole()
+		return
+	}
+
+	su := common.StringUtility{}
+	lBanner1 := len(appBanner1)
+	strx, _ := su.StrCenterInStr("CmdrX.exe", lBanner1 - 2)
+	fmt.Println("\n\n"+ appBanner1)
+	fmt.Println("=" + strx + "=")
+	fmt.Println(appBanner1)
+	fmt.Println("Current Directory: ", s)
+
+	s, err = fh.GetExecutablePathFileName()
+
+	if err!=nil {
+		om.SetFatalError("fh.GetExecutablePathFileName() FAILED!\n", err, 2)
+		om.PrintToConsole()
+		return
+	}
+
+	fmt.Println("Executable Directory: ", s)
+
 	parentHistory := []common.OpsMsgContextInfo{parent}
 
-	cmds, om := startUp(&lg, parentHistory)
+	cmds, om3 := startUp(&lg, parentHistory)
 
-	if om.IsFatalError() {
-		panic(om)
+	if om3.IsFatalError() {
+		panic(om3)
 	}
 
 	for _, cmdJob := range cmds.CmdJobs.CmdJobArray {
 
-		om2 := executeJob(&cmdJob, &lg, parentHistory)
+		om4 := executeJob(&cmdJob, &lg, parentHistory)
 
-		if cmdJob.CmdJobIsCompleted && !om2.IsError() {
+		if cmdJob.CmdJobIsCompleted && !om4.IsError() {
 			lg.NoOfJobsCompleted++
 		}
 
 		lg.NoOfJobGroupMsgs += cmdJob.CmdJobNoOfMsgs
 
-		if om2.IsError() && lg.KillAllJobsOnFirstError {
+		if om4.IsError() && lg.KillAllJobsOnFirstError {
+			om4.LogMsgToFile(lg.FilePtr)
 			doLogWrapUp(&lg, cmds, parentHistory)
-			panic(om2)
+			panic(om4)
 		}
 	}
 
@@ -71,12 +94,19 @@ func doLogWrapUp(lg *common.LogJobGroup, cmds common.CommandBatch, parent []comm
 
 	om1 := common.OpsMsgDto{}.InitializeAllContextInfo(parent, msgCtx)
 
+	// Closes lg.FilePtr
 	om2 := lg.WriteJobGroupFooterToLog(cmds, om1.GetNewParentHistory())
 
+	if om2.IsFatalError(){
+		om2.PrintToConsole()
+		return om2
+	}
 
-	fmt.Println("AppLogPathFileName", lg.AppLogPathFileName)
+	fmt.Println(appBanner1)
+	fmt.Println("See Log File:")
+	fmt.Println(lg.AppLogPathFileName)
 
-	fmt.Println("AppLogBanner1", lg.Banner1)
+	fmt.Println(appBanner1)
 
 	return om2
 }
@@ -111,10 +141,16 @@ func startUp(lg *common.LogJobGroup,parent []common.OpsMsgContextInfo) (common.C
 		panic(om5)
 	}
 
-	cmds.FormatCmdParameters()
-	om6 := cmds.SetBatchStartTime(parentHistory)
+	om6 := cmds.FormatCmdParameters(parentHistory)
+
 	if om6.IsFatalError() {
 		panic(om6)
+	}
+
+
+	om7 := cmds.SetBatchStartTime(parentHistory)
+	if om7.IsFatalError() {
+		panic(om7)
 	}
 
 	parms.IanaTimeZone = 	cmds.CmdJobsHdr.IanaTimeZone
@@ -136,20 +172,20 @@ func startUp(lg *common.LogJobGroup,parent []common.OpsMsgContextInfo) (common.C
 	parms.NoOfJobs = cmds.CmdJobsHdr.NoOfCmdJobs
 	parms.Dtfmt = &dtf
 
-	om7 := lg.New(parms, parentHistory)
+	om8 := lg.New(parms, parentHistory)
 
-	if om7.IsFatalError() {
-		panic(om7)
+	if om8.IsFatalError() {
+		panic(om8)
 	}
 
 	dur := common.DurationUtility{}
 
 	time.Sleep(dur.GetDurationFromSeconds(10))
 
-	om8 := cmds.SetBatchEndTime(parentHistory)
+	om9 := cmds.SetBatchEndTime(parentHistory)
 
-	if om8.IsFatalError() {
-		panic(om8)
+	if om9.IsFatalError() {
+		panic(om9)
 	}
 
 	om.SetSuccessfulCompletionMessage("Finished startUp()", 79)
@@ -160,6 +196,7 @@ func startUp(lg *common.LogJobGroup,parent []common.OpsMsgContextInfo) (common.C
 func executeJob(job *common.CmdJob, logOps *common.LogJobGroup, parent []common.OpsMsgContextInfo) common.OpsMsgDto {
 
 	om := baseLogMsgConfigMain(parent, "executeJob")
+
 	thisParentInfo := om.GetNewParentHistory()
 
 	job.SetCmdJobActualStartTime(thisParentInfo)
@@ -168,8 +205,22 @@ func executeJob(job *common.CmdJob, logOps *common.LogJobGroup, parent []common.
 
 	if om2.IsFatalError() {
 		logOps.WriteOpsMsgToLog(om2, job, thisParentInfo)
+		om2.PrintToConsole()
 		return om2
 	}
+
+	executeJobCommand(job,logOps,om.GetNewParentHistory())
+
+	executeJobCommand(job,logOps, om.GetNewParentHistory())
+
+	logOps.WriteCmdJobFooterToLog(job, thisParentInfo)
+
+	return om.SignalSuccessfulCompletion(619)
+}
+
+func executeJobCommand(job *common.CmdJob, logOps *common.LogJobGroup, parent []common.OpsMsgContextInfo) common.OpsMsgDto {
+
+	om := baseLogMsgConfigMain(parent, "executeJobCommand")
 
 	time.Sleep(time.Duration(5) * time.Second)
 
@@ -182,15 +233,22 @@ func executeJob(job *common.CmdJob, logOps *common.LogJobGroup, parent []common.
 
 	opsMsg.SetInfoMessage(s, int64((job.CmdJobNo * 10000000) + job.CmdJobNoOfMsgs))
 
-	logOps.WriteOpsMsgToLog(opsMsg, job, thisParentInfo)
+	om1 := logOps.WriteOpsMsgToLog(opsMsg, job, om.GetNewParentHistory())
 
-	job.SetCmdJobActualEndTime(thisParentInfo)
+	if om1.IsFatalError() {
+		panic(om1)
+	}
 
-	logOps.WriteCmdJobFooterToLog(job, thisParentInfo)
+	om2 := job.SetCmdJobActualEndTime(om.GetNewParentHistory())
 
-	return om.SignalSuccessfulCompletion(619)
+	if om2.IsFatalError() {
+		panic(om2)
+	}
+
+	om.SetSuccessfulCompletionMessage("Completed executeJobCommand", 629)
+
+	return om
 }
-
 
 // baseLogErrConfig - Used internally by LogJobGroup
 // methods to set up error messages.

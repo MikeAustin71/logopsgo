@@ -80,6 +80,43 @@ func (omc *OpsMsgCollection) AddOpsMsg(opsMsg OpsMsgDto) {
 	omc.OpsMessages = append(omc.OpsMessages, opsMsg)
 }
 
+// AddOpsMsgCollection - Adds another collection of OpsMsgDto
+// objects to the current collection.
+func (omc *OpsMsgCollection) AddOpsMsgCollection(omc2 *OpsMsgCollection) {
+
+	lOmc2 := len(omc2.OpsMessages)
+
+	if lOmc2 == 0 {
+		return
+	}
+
+	for i:=0; i< lOmc2 ; i++ {
+		omc.AddOpsMsg(omc2.OpsMessages[i].CopyOut())
+	}
+
+	return
+}
+
+// CopyOut - Returns an OpsMsgCollection which is an
+// exact duplicate of the current OpsMsgCollection
+func (omc *OpsMsgCollection) CopyOut() OpsMsgCollection {
+	omc2 := OpsMsgCollection{}
+
+	lOmc := len(omc.OpsMessages)
+
+	for i:= 0; i < lOmc; i++ {
+		omc2.AddOpsMsg(omc.OpsMessages[i].CopyOut())
+	}
+
+	return omc2
+}
+
+// GetArrayLength - returns the array length of the
+// OpsMessages array.
+func (omc *OpsMsgCollection) GetArrayLength() int {
+	return len(omc.OpsMessages)
+}
+
 // PopLastMsg - Removes the last OpsMsgDto object
 // from the collections array, and returns it to
 // the calling method.
@@ -126,11 +163,6 @@ func (omc *OpsMsgCollection) PeekLastMsg() OpsMsgDto {
 	return omc.OpsMessages[l1-1].CopyOut()
 }
 
-// GetArrayLength - returns the array length of the
-// OpsMessages array.
-func (omc *OpsMsgCollection) GetArrayLength() int {
-	return len(omc.OpsMessages)
-}
 
 // OpsMsgType - Designates type of Message being logged
 type OpsMsgType int
@@ -1188,6 +1220,15 @@ func (opsMsg *OpsMsgDto) SetDebugMessage(msg string, msgId int64){
 	opsMsg.setMessageText(msg, msgId)
 
 }
+
+// PrintToConsole - Prints Operations Message to the
+// Console
+func (opsMsg *OpsMsgDto) PrintToConsole() {
+
+	fmt.Printf(opsMsg.String())
+
+}
+
 
 // SetFatalError - Creates a Fatal Error message from an error type.
 //

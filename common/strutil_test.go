@@ -12,8 +12,89 @@ import (
 			https://AmarilloMike@bitbucket.org/AmarilloMike/stringutilgo.git
 */
 
+// TODO - Add tests for StrRightJustify and StrCenterInStrLeft
 
-func TestStrCenterInStr(t *testing.T) {
+func TestStringUtility_StrCenterInStr_001(t *testing.T) {
+	strToCntr := "1234567"
+	fieldLen := 79
+	exLeftPadLen := 36
+	exRightPadLen := 36
+	exTotalLen := 79
+
+	leftPad := strings.Repeat(" ", exLeftPadLen)
+	rightPad := strings.Repeat(" ", exRightPadLen)
+	exStr :=  leftPad + strToCntr + rightPad
+
+	su := StringUtility{}
+	str, err := su.StrCenterInStr(strToCntr, fieldLen)
+	if err != nil {
+		t.Error("StrCenterInStr() generated error: ", err.Error())
+	}
+
+	l1 := su.StrGetRuneCnt(str)
+
+	if l1 != exTotalLen {
+		t.Error(fmt.Sprintf("Expected total str length '%v', got", exTotalLen), l1)
+	}
+
+	if str != exStr {
+		t.Error(fmt.Sprintf("Strings did not match. Expected string '%v', got ", exStr), str)
+	}
+
+}
+
+func TestStringUtility_StrLeftJustify_001(t *testing.T) {
+	strToJustify := "1234567"
+	fieldLen := 45
+	exTotalLen := fieldLen
+	exRightPad := strings.Repeat(" ", 38 )
+	exStr := strToJustify + exRightPad
+
+	su := StringUtility{}
+	str, err := su.StrLeftJustify(strToJustify, fieldLen)
+	if err != nil {
+		t.Error("StrLeftJustify() generated error: ", err.Error())
+	}
+
+	l1 := su.StrGetRuneCnt(str)
+
+	if l1 != exTotalLen {
+		t.Error(fmt.Sprintf("Expected total str length '%v', got", exTotalLen), l1)
+	}
+
+	if str != exStr {
+		t.Error(fmt.Sprintf("Strings did not match. Expected string '%v', got ", exStr), str)
+	}
+
+}
+
+func TestStringUtility_StrRightJustify_001(t *testing.T) {
+
+	strToJustify := "1234567"
+	fieldLen := 45
+	exTotalLen := fieldLen
+	exLeftPad := strings.Repeat(" ", 38 )
+	exStr :=  exLeftPad + strToJustify
+
+	su := StringUtility{}
+	str, err := su.StrRightJustify(strToJustify, fieldLen)
+	if err != nil {
+		t.Error("StrRightJustify() generated error: ", err.Error())
+	}
+
+	l1 := su.StrGetRuneCnt(str)
+
+	if l1 != exTotalLen {
+		t.Error(fmt.Sprintf("Expected total str length '%v', got", exTotalLen), l1)
+	}
+
+	if str != exStr {
+		t.Error(fmt.Sprintf("Strings did not match. Expected string '%v', got ", exStr), str)
+	}
+
+}
+
+func TestStringUtility_StrCenterInStrLeft_001(t *testing.T) {
 	strToCntr := "1234567"
 	fieldLen := 79
 	exPadLen := 36
@@ -21,9 +102,9 @@ func TestStrCenterInStr(t *testing.T) {
 
 	exStr := strings.Repeat(" ", exPadLen) + strToCntr
 	su := StringUtility{}
-	str, err := su.StrCenterInStr(strToCntr, fieldLen)
+	str, err := su.StrCenterInStrLeft(strToCntr, fieldLen)
 	if err != nil {
-		t.Error("StrCenterInStr() generated error: ", err.Error())
+		t.Error("StrCenterInStrLeft() generated error: ", err.Error())
 	}
 
 	l1 := su.StrGetRuneCnt(str)

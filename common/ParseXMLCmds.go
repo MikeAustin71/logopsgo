@@ -40,7 +40,6 @@ func ParseXML(xmlPathFileName string, parent []OpsMsgContextInfo) (CommandBatch,
 	xmlFile, err1 := os.Open(xmlPathFileName)
 
 	if err1 != nil {
-
 		s := fmt.Sprintf("File Name: %v  - Error opening file: %v", xmlPathFileName, err1.Error())
 		om.SetFatalError(s, err1, 1005)
 		return cmds, om
