@@ -42,6 +42,8 @@ type StartupParameters struct {
 }
 
 
+// AssembleAppPath - Assembles the Application Path and returns it as a FileHelper
+// structure.
 func (sUp *StartupParameters) AssembleAppPath(appPathAndFileName string, parentHistory [] OpsMsgContextInfo) (FileHelper, OpsMsgDto) {
 
 	om := sUp.startUpBaseErrConfig(parentHistory, "AssembleAppPath")
@@ -93,6 +95,8 @@ func (sUp *StartupParameters) AssembleAppPath(appPathAndFileName string, parentH
 	return fh2, om
 }
 
+// AssembleCmdPath - Assembles the file path for xml file containing the commands to be
+// executed. The file path data is returned in a File Helper structure.
 func (sUp * StartupParameters) AssembleCmdPath(cmdPathAndFileName string, parent []OpsMsgContextInfo) (FileHelper, OpsMsgDto) {
 
 	om := sUp.startUpBaseErrConfig(parent, "AssembleCmdPath")
@@ -144,6 +148,8 @@ func (sUp * StartupParameters) AssembleCmdPath(cmdPathAndFileName string, parent
 	return fh2, om
 }
 
+// AssembleLogPath - Assembles the log path and returns the file path data in a
+// File Helper structure.
 func (sUp *StartupParameters) AssembleLogPath(lgPath string, parent []OpsMsgContextInfo) (FileHelper, OpsMsgDto) {
 
 	om := sUp.startUpBaseErrConfig(parent, "AssembleLogPath")

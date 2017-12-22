@@ -9,15 +9,25 @@ import (
 const (
 	srcFileNameLogOpsMain = "main.go"
 	errBlockNoLogOpsMain  = int64(1000000)
-	cmdPathFileName = "D:/go/work/src/MikeAustin71/logopsgo/app/cmdrXCmds.xml"
-	appPathFileName = "D:/go/work/src/MikeAustin71/logopsgo/app/cmdrX.exe"
-	appLogPathOnly = "D:/go/work/src/MikeAustin71/logopsgo/app/cmdrXLog/alog.log"
-	appBanner1 = "===================================================================="
+	debugAppPathFileName  = "D:/go/work/src/MikeAustin71/logopsgo/app/cmdrX.exe"
+	debugCmdPathFileName  = "D:/go/work/src/MikeAustin71/logopsgo/app/cmdrXCmds.xml"
+	debugAppLogPathOnly   = "D:/go/work/src/MikeAustin71/logopsgo/app/cmdrXLog/alog.log"
+	appBanner1            = "===================================================================="
 )
+
+type AppStartUpDirectories struct {
+	AppPathFileName	string		// File Path for Application Executable
+	CmdPathFileName string		// File Path for XML Command File
+	LogPathFileName	string		// File Path for LogPathFileName
+	CurrentDirPath	string		// Path for the current Directory
+}
+
+var IsRunningInDebugMode bool
 
 func main() {
 
-	lg := common.LogJobGroup{}
+	IsRunningInDebugMode = true
+
 	parent := common.OpsMsgContextInfo{
 		SourceFileName: srcFileNameLogOpsMain,
 		ParentObjectName: "",
@@ -25,11 +35,14 @@ func main() {
 		BaseMessageId: errBlockNoLogOpsMain,
 	}
 
+	appDirs := AppStartUpDirectories{}
+
 	om := common.OpsMsgDto{}.InitializeWithMessageContext(parent)
 
 	fh := common.FileHelper{}
 
-	s, err := fh.GetCurrentDir()
+	currDirPath, err := fh.GetCurrentDir()
+	appDirs.CurrentDirPath = currDirPath
 
 	if err!=nil {
 		om.SetFatalError("fh.GetCurrentDir() FAILED!\n", err, 1)
@@ -43,9 +56,9 @@ func main() {
 	strx, _ := su.StrCenterInStr("CmdrX.exe", lBanner1 - 2)
 	fmt.Println("=" + strx + "=")
 	fmt.Println(appBanner1)
-	fmt.Println("Current Directory: ", s)
+	fmt.Println("Current Directory: ", currDirPath)
 
-	s, err = fh.GetExecutablePathFileName()
+	exeFilePath, err := fh.GetExecutablePathFileName()
 
 	if err!=nil {
 		om.SetFatalError("fh.GetExecutablePathFileName() FAILED!\n", err, 2)
@@ -53,11 +66,27 @@ func main() {
 		return
 	}
 
-	fmt.Println("Executable Directory: ", s)
+	fmt.Println("Executable Directory: ", exeFilePath)
 
 	parentHistory := []common.OpsMsgContextInfo{parent}
 
-	cmds, om3 := startUp(&lg, parentHistory)
+	if IsRunningInDebugMode {
+		appDirs.AppPathFileName = debugAppPathFileName
+		appDirs.CmdPathFileName = debugCmdPathFileName
+		appDirs.CurrentDirPath = currDirPath
+		appDirs.LogPathFileName = debugAppLogPathOnly
+	} else {
+		appDirs.AppPathFileName = exeFilePath
+		appDirs.CmdPathFileName = exeFilePath
+		appDirs.CurrentDirPath = currDirPath
+		appDirs.LogPathFileName = ".\\cmdrXLog"
+
+	}
+
+
+	lg := common.LogJobGroup{}
+
+	cmds, om3 := startUp(&lg, appDirs, parentHistory)
 
 	if om3.IsFatalError() {
 		panic(om3)
@@ -111,25 +140,26 @@ func doLogWrapUp(lg *common.LogJobGroup, cmds common.CommandBatch, parent []comm
 	return om2
 }
 
-func startUp(lg *common.LogJobGroup,parent []common.OpsMsgContextInfo) (common.CommandBatch, common.OpsMsgDto) {
+func startUp(lg *common.LogJobGroup,appStartDirs AppStartUpDirectories,
+		parent []common.OpsMsgContextInfo) (common.CommandBatch, common.OpsMsgDto) {
 
 	om := baseLogMsgConfigMain(parent, "startUp")
 	parentHistory := om.GetNewParentHistory()
 	parms := common.StartupParameters{}
 
-	appFileParms, om2 := parms.AssembleAppPath(appPathFileName, parentHistory)
+	appFileParms, om2 := parms.AssembleAppPath(appStartDirs.AppPathFileName, parentHistory)
 
 	if om2.IsFatalError() {
 		panic(om2)
 	}
 
-	cmdFileParms, om3 := parms.AssembleCmdPath(cmdPathFileName, parentHistory)
+	cmdFileParms, om3 := parms.AssembleCmdPath(appStartDirs.CmdPathFileName, parentHistory)
 
 	if om3.IsFatalError() {
 		panic(om3)
 	}
 
-	appLogPathParms, om4 := parms.AssembleLogPath(appLogPathOnly, parentHistory)
+	appLogPathParms, om4 := parms.AssembleLogPath(appStartDirs.LogPathFileName, parentHistory)
 
 	if om4.IsFatalError() {
 		panic(om4)
