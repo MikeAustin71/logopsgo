@@ -11,7 +11,7 @@ const (
 	errBlockNoLogOpsMain  = int64(1000000)
 	cmdPathFileName = "D:/go/work/src/MikeAustin71/logopsgo/app/cmdrXCmds.xml"
 	appPathFileName = "D:/go/work/src/MikeAustin71/logopsgo/app/cmdrX.exe"
-	appLogPathOnly = "D:/go/work/src/MikeAustin71/logopsgo/app/cmdrX/alog.log"
+	appLogPathOnly = "D:/go/work/src/MikeAustin71/logopsgo/app/cmdrXLog/alog.log"
 	appBanner1 = "===================================================================="
 )
 
