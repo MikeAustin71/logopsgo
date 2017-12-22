@@ -39,8 +39,8 @@ func main() {
 
 	su := common.StringUtility{}
 	lBanner1 := len(appBanner1)
-	strx, _ := su.StrCenterInStr("CmdrX.exe", lBanner1 - 2)
 	fmt.Println("\n\n"+ appBanner1)
+	strx, _ := su.StrCenterInStr("CmdrX.exe", lBanner1 - 2)
 	fmt.Println("=" + strx + "=")
 	fmt.Println(appBanner1)
 	fmt.Println("Current Directory: ", s)

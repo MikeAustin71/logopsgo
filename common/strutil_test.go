@@ -12,7 +12,7 @@ import (
 			https://AmarilloMike@bitbucket.org/AmarilloMike/stringutilgo.git
 */
 
-// TODO - Add tests for StrRightJustify and StrCenterInStrLeft
+
 
 func TestStringUtility_StrCenterInStr_001(t *testing.T) {
 	strToCntr := "1234567"
