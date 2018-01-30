@@ -121,6 +121,10 @@ func (cmdBatch *CommandBatch) assembleCmdElements(parentHistory []OpsMsgContextI
 			return omx
 		}
 
+		if job.ExeCmdInDir == "" {
+			job.ExeCmdInDir = "Current CmdrX.exe Directory"
+		}
+
 		omy := cmdBatch.assembleInputArgs(job, om.GetNewParentHistory())
 
 		if omy.IsError() {
@@ -243,7 +247,7 @@ func (cmdBatch *CommandBatch) assembleInputArgs(job *CmdJob, parentHistory []Ops
 
 // SetBatchStartTime - Sets the time at which jobs in this
 // Command Batch began processing.
-func (cmdBatch *CommandBatch) SetBatchStartTime(parent []OpsMsgContextInfo) OpsMsgDto {
+func (cmdBatch *CommandBatch) SetBatchStartTime(startTimeUTC time.Time, parent []OpsMsgContextInfo) OpsMsgDto {
 
 	msgCtx := OpsMsgContextInfo{
 							SourceFileName: srcFileNameXMLCmdJobsData,
@@ -254,7 +258,7 @@ func (cmdBatch *CommandBatch) SetBatchStartTime(parent []OpsMsgContextInfo) OpsM
 
 	om := OpsMsgDto{}.InitializeAllContextInfo(parent, msgCtx)
 
-	cmdBatch.CmdJobsHdr.CmdBatchStartUTC = time.Now().UTC()
+	cmdBatch.CmdJobsHdr.CmdBatchStartUTC = startTimeUTC
 
 	tzu, err := TimeZoneUtility{}.ConvertTz(cmdBatch.CmdJobsHdr.CmdBatchStartUTC, cmdBatch.CmdJobsHdr.IanaTimeZone)
 
@@ -377,7 +381,9 @@ type CmdJob struct {
 	CmdJobDuration             time.Duration
 	CmdJobElapsedTime          string
 	CmdJobNoOfMsgs						 int
+	CmdJobNoOfErrorMsgs				 int
 	CmdJobIsCompleted					 bool
+	CmdJobExecutionStatus			 string
 }
 
 // SetDelayCmdStartTime - Sets the date time at which the command
