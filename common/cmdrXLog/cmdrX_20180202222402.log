@@ -1,0 +1,30 @@
+################################################################################
+################################################################################
+                      App Name: cmdrX  AppVersion: 2.0.0 
+################################################################################
+               Execution Job Group Command File: cmdrXCmds.xml 
+                        Starting Execution of 0 Jobs. 
+================================================================================
+  Job Group Start Time UTC: 2018-02-03 Sat 04:24:02.016841600 +0000 UTC 
+Job Group Start Time Local: 2018-02-02 Fri 22:24:02.016841600 -0600 CST 
+ Job Group Local Time Zone:  - CST 
+********************************************************************************
+  This Application Executable File:
+    D:\go\work\src\MikeAustin71\logopsgo\app\cmdrX.exe
+
+  This Log File:
+    D:\go\work\src\MikeAustin71\logopsgo\common\cmdrXLog\cmdrX_20180202222402.log
+
+  Command File:
+    D:\go\work\src\MikeAustin71\logopsgo\app\cmdrXCmds.xml
+
+  Initial Application Path: 
+    D:\go\work\src\MikeAustin71\logopsgo\app
+
+  Base Start Directory:
+    D:\go\work\src\MikeAustin71\logopsgo\app
+
+********************************************************************************
+  Number Of Old Log Files Deleted: 0 
+################################################################################
+################################################################################

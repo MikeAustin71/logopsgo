@@ -7,6 +7,7 @@ import (
 	"os"
 	"time"
 	"strings"
+	"io/ioutil"
 )
 
 /*
@@ -1889,19 +1890,28 @@ func (fMgr *FileMgr) CopyFileStr(dstPathFileName string) error {
 // method on the current file pointer, FileHelper.FilePtr
 func (fMgr *FileMgr) CloseFile() error {
 
+	ePrefix := "FileMgr.CloseFile() "
+	var err error
 
 	if fMgr.FilePtr == nil {
 		fMgr.IsFilePtrOpen = false
 		return nil
 	}
 
-	err := fMgr.FilePtr.Close()
+	err = fMgr.FlushBytesToDisk()
+
+	if err!=nil {
+		return fmt.Errorf(ePrefix + "Error returned from fMgr.FlushBytesToDisk().  Error='%v'", err.Error())
+	}
+
+	err = fMgr.FilePtr.Close()
 
 	if err != nil {
-		return fmt.Errorf("FileMgr.CloseFile() Received Error from fMgr.FilePtr.Close(). fMgr.AbsolutePathFileName")
+		return fmt.Errorf(ePrefix + "Received Error from fMgr.FilePtr.Close(). fMgr.AbsolutePathFileName")
 	}
 
 	fMgr.IsFilePtrOpen = false
+	fMgr.FilePtr = nil
 
 	return nil
 }
@@ -2200,6 +2210,28 @@ func(fMgr *FileMgr) DoesThisFileExist() (bool, error) {
 
 
 	return fMgr.AbsolutePathFileNameDoesExist, nil
+}
+
+// FlushBytesToDisk - After Writing bytes to a file, use this
+// method to commit the contents of the current file to
+// stable storage.
+func (fMgr *FileMgr) FlushBytesToDisk() error {
+
+	ePrefix := "FileMgr.FlushBytesToDisk() "
+
+	var err error
+
+	if fMgr.IsFilePtrOpen && fMgr.FilePtr!= nil {
+
+		err = fMgr.FilePtr.Sync()
+
+		if err!=nil {
+			return fmt.Errorf(ePrefix + "Error returned from fMgr.FilePtr.Sync()")
+		}
+
+	}
+
+	return nil
 }
 
 // GetFileInfo - Wrapper function for os.Stat(). This method
@@ -2589,20 +2621,14 @@ func (fMgr FileMgr) NewFromDirStrFileNameStr(dirStr, fileNameExtStr string) (Fil
 
 }
 
-// OpenThisFileReadWrite - Opens a file using file data in the
-// current FileHelper data fields. If successful, this method
-// will use FileHelper.AbsolutePathFileName to open an *os.File
-// or File Pointer.
+// OpenThisFileReadOnly - Opens the file identified by the current
+// FileMgr object as a 'Read-Only' File. Subsequent operations may
+// read from this file but may NOT write to this file.
 //
-// As the method's name implies, the 'FileHelper.AbsolutePathFileName'
-// will be opened for reading and writing. If FileHelper.AbsolutePathFileName
-// does not exist, it will be created. The FileMode is set to'rwxrwxrwx' or
-// Mode= 0666
 //
-func (fMgr *FileMgr) OpenThisFileReadWrite() error {
-	var err error
-
+func (fMgr *FileMgr) OpenThisFileReadOnly() error {
 	ePrefix := "FileMgr.OpenThisFileReadWrite()"
+	var err error
 
 	if !fMgr.IsInitialized {
 		return errors.New(ePrefix + " Error: The File Manager data structure has NOT been initialized.")
@@ -2615,6 +2641,13 @@ func (fMgr *FileMgr) OpenThisFileReadWrite() error {
 	if fMgr.AbsolutePathFileName == "" {
 		fMgr.AbsolutePathFileNameIsPopulated = false
 		return errors.New(ePrefix + " Error: FileMgr.AbsolutePathFileName is EMPTY!")
+	}
+
+	if fMgr.IsFilePtrOpen {
+		err = fMgr.CloseFile()
+		if err!=nil {
+			return fmt.Errorf(ePrefix + "Error returned by fMgr.CloseFile(). AbsolutePathFileName='%v'  Error='%v'",fMgr.AbsolutePathFileName, err.Error() )
+		}
 	}
 
 	doesFileExist, err := fMgr.DoesThisFileExist()
@@ -2639,6 +2672,74 @@ func (fMgr *FileMgr) OpenThisFileReadWrite() error {
 		return fmt.Errorf(ePrefix + "Error creating File. Error returned from os.Create(fMgr.AbsolutePathFileName). fMgr.AbsolutePathFileName='%v' Error='%v' ",fMgr.AbsolutePathFileName, err.Error() )
 	}
 
+	fMgr.FilePtr, err = os.OpenFile(fMgr.AbsolutePathFileName,os.O_RDONLY,0666)
+
+	if err != nil {
+		return fmt.Errorf(ePrefix + " Error opening file: '%v' Error= '%v'", fMgr.AbsolutePathFileName, err.Error())
+	}
+
+	fMgr.IsFilePtrOpen = true
+
+	return nil
+
+}
+
+// OpenThisFileReadWrite - Opens a file using file data in the
+// current FileHelper data fields. If successful, this method
+// will use FileHelper.AbsolutePathFileName to open an *os.File
+// or File Pointer.
+//
+// As the method's name implies, the 'FileHelper.AbsolutePathFileName'
+// will be opened for reading and writing. If FileHelper.AbsolutePathFileName
+// does not exist, it will be created. The FileMode is set to'rwxrwxrwx' and
+// the permission Mode= '0666'
+//
+func (fMgr *FileMgr) OpenThisFileReadWrite() error {
+	var err error
+
+	ePrefix := "FileMgr.OpenThisFileReadWrite()"
+
+	if !fMgr.IsInitialized {
+		return errors.New(ePrefix + " Error: The File Manager data structure has NOT been initialized.")
+	}
+
+	if !fMgr.AbsolutePathFileNameIsPopulated {
+		return errors.New(ePrefix + " Error: FileMgr.AbsolutePathFileName has NOT been initialized and populated.")
+	}
+
+	if fMgr.AbsolutePathFileName == "" {
+		fMgr.AbsolutePathFileNameIsPopulated = false
+		return errors.New(ePrefix + " Error: FileMgr.AbsolutePathFileName is EMPTY!")
+	}
+
+	if fMgr.IsFilePtrOpen || fMgr.FilePtr != nil {
+		err = fMgr.CloseFile()
+		if err!=nil {
+			return fmt.Errorf(ePrefix + "Error returned by fMgr.CloseFile(). AbsolutePathFileName='%v'  Error='%v'",fMgr.AbsolutePathFileName, err.Error() )
+		}
+	}
+
+	doesFileExist, err := fMgr.DoesThisFileExist()
+
+	if err != nil {
+		return fmt.Errorf(ePrefix + " Error returned from fMgr.DoesThisFileExist() - %v", err.Error())
+	}
+
+	if !doesFileExist {
+
+		err = fMgr.CreateDirAndFile()
+
+		if err != nil {
+			return fmt.Errorf(ePrefix + " Error from fMgr.CreateDirAndFile(fMgr.AbsolutePathFileName). AbsolutePathFileName='%v'. Error='%v'", fMgr.AbsolutePathFileName, err.Error())
+		}
+
+		fMgr.AbsolutePathFileNameDoesExist = true
+		fMgr.AbsolutePathFileNameIsPopulated = true
+
+		return nil
+	}
+
+
 	fMgr.FilePtr, err = os.OpenFile(fMgr.AbsolutePathFileName,os.O_RDWR,0666)
 
 	if err != nil {
@@ -2651,15 +2752,81 @@ func (fMgr *FileMgr) OpenThisFileReadWrite() error {
 	return nil
 }
 
+
+// ReadAllFile - Reads the file identified by the current FileMgr
+// and returns the contents in a byte array.
+//
+// If no errors are encountered the returned 'error' value is
+// nil.
+func (fMgr *FileMgr) ReadAllFile() ([]byte, error) {
+	ePrefix := "FileMgr.ReadAllFile() "
+	var err error
+
+	if !fMgr.IsInitialized {
+		return []byte{}, errors.New(ePrefix + " Error: The File Manager data structure has NOT been initialized.")
+	}
+
+	err = fMgr.IsFileMgrValid("")
+
+	if err != nil {
+		return []byte{}, fmt.Errorf(ePrefix + "Error - This File Manager is INVALID! Error='%v'", err.Error())
+	}
+
+	if !fMgr.AbsolutePathFileNameIsPopulated {
+		return []byte{}, errors.New(ePrefix + "Error: FileMgr.AbsolutePathFileName has NOT been initialized and populated.")
+	}
+
+	if fMgr.AbsolutePathFileName == "" {
+		fMgr.AbsolutePathFileNameIsPopulated = false
+		return []byte{}, errors.New(ePrefix + "Error: FileMgr.AbsolutePathFileName is EMPTY!")
+	}
+
+
+	if !fMgr.IsFilePtrOpen || fMgr.FilePtr == nil {
+
+		if fMgr.FilePtr != nil {
+			fMgr.CloseFile()
+		}
+
+		// If the path and file name do not exist, this method will
+		// attempt to create said path and file name.
+		err = fMgr.OpenThisFileReadWrite()
+
+		if err != nil {
+			return []byte{}, fmt.Errorf(ePrefix + "Error returned from fMgr.OpenThisFileReadWrite() fileNameExt='%v' Error='%v'", fMgr.AbsolutePathFileName, err.Error())
+		}
+
+		fMgr.IsFilePtrOpen = true
+	}
+
+	bytesRead, err := ioutil.ReadAll(fMgr.FilePtr)
+
+	if err!=nil {
+		return []byte{}, fmt.Errorf(ePrefix + "Error returned by ioutil.ReadAll(fMgr.FilePtr). FileName='%v' Errors='%v'", fMgr.AbsolutePathFileName, err.Error())
+	}
+
+	return bytesRead, nil
+}
+
 // ReadFileBytes - Reads bytes from the file identified by the current FileMgr
 // object. Bytes are stored in 'byteBuff', a byte array passed in as an input
 // parameter.
+//
+// If successful, the returned error value is 'nil'. The returned value 'int'
+// contains the number of bytes read from the current file.
 func (fMgr *FileMgr) ReadFileBytes(byteBuff []byte) (int, error) {
 
-	ePrefix := "FileMgr.WriteStrToFile() "
+	ePrefix := "FileMgr.ReadFileBytes() "
+	var err error
 
 	if !fMgr.IsInitialized {
 		return 0, errors.New(ePrefix + " Error: The File Manager data structure has NOT been initialized.")
+	}
+
+	err = fMgr.IsFileMgrValid("")
+
+	if err != nil {
+		return 0, fmt.Errorf(ePrefix + "Error - This File Manager is INVALID! Error='%v'", err.Error())
 	}
 
 	if !fMgr.AbsolutePathFileNameIsPopulated {
@@ -2671,14 +2838,18 @@ func (fMgr *FileMgr) ReadFileBytes(byteBuff []byte) (int, error) {
 		return 0, errors.New(ePrefix + " Error: FileMgr.AbsolutePathFileName is EMPTY!")
 	}
 
-	if fMgr.FilePtr == nil {
+	if !fMgr.IsFilePtrOpen || fMgr.FilePtr == nil {
+
+		if fMgr.FilePtr != nil {
+			fMgr.CloseFile()
+		}
 
 		// If the path and file name do not exist, this method will
 		// attempt to create said path and file name.
-		err := fMgr.OpenThisFileReadWrite()
+		err = fMgr.OpenThisFileReadWrite()
 
 		if err != nil {
-			return 0, fmt.Errorf(ePrefix + " - fMgr.OpenThisFileReadWrite() returned errors: %v", err.Error())
+			return 0, fmt.Errorf(ePrefix + "Error returned by fMgr.OpenThisFileReadWrite()  FileName='%v'  Error='%v'", fMgr.AbsolutePathFileName, err.Error())
 		}
 
 		fMgr.IsFilePtrOpen = true
@@ -2687,7 +2858,7 @@ func (fMgr *FileMgr) ReadFileBytes(byteBuff []byte) (int, error) {
 	bytesRead, err := fMgr.FilePtr.Read(byteBuff)
 
 	if err!=nil {
-		return bytesRead, fmt.Errorf(ePrefix + " fMgr.FilePtr.Read(byteBuff) returned errors. FileName='%v' Errors='%v'", fMgr.AbsolutePathFileName, err.Error())
+		return bytesRead, fmt.Errorf(ePrefix + "Error returned by fMgr.FilePtr.Read(byteBuff). FileName='%v'  Error='%v'", fMgr.AbsolutePathFileName, err.Error())
 	}
 
 	return bytesRead, nil
@@ -2909,25 +3080,36 @@ func (fMgr *FileMgr) SetFileInfo(info os.FileInfo) error {
 func (fMgr *FileMgr) WriteStrToFile(str string) (int, error) {
 
 	ePrefix := "FileMgr.WriteStrToFile() "
+	var err error
 
 	if !fMgr.IsInitialized {
-		return 0, errors.New(ePrefix + " Error: The File Manager data structure has NOT been initialized.")
+		return 0, errors.New(ePrefix + "Error: The File Manager data structure has NOT been initialized.")
+	}
+
+	err = fMgr.IsFileMgrValid("")
+
+	if err != nil {
+		return 0, fmt.Errorf(ePrefix + "Error: This File Manger is INVALID! fileNameExt='%v'  Error='%v'", fMgr.AbsolutePathFileName, err.Error())
 	}
 
 	if !fMgr.AbsolutePathFileNameIsPopulated {
-		return 0, errors.New(ePrefix + " Error: FileMgr.AbsolutePathFileName has NOT been initialized and populated.")
+		return 0, errors.New(ePrefix + "Error: FileMgr.AbsolutePathFileName has NOT been initialized and populated.")
 	}
 
 	if fMgr.AbsolutePathFileName == "" {
 		fMgr.AbsolutePathFileNameIsPopulated = false
-		return 0, errors.New(ePrefix + " Error: FileMgr.AbsolutePathFileName is EMPTY!")
+		return 0, errors.New(ePrefix + "Error: FileMgr.AbsolutePathFileName is EMPTY!")
 	}
 
-	if fMgr.FilePtr == nil {
+	if !fMgr.IsFilePtrOpen || fMgr.FilePtr == nil {
+
+		if fMgr.FilePtr != nil {
+			fMgr.CloseFile()
+		}
 
 		// If the path and file name do not exist, this method will
 		// attempt to create said path and file name.
-		err := fMgr.OpenThisFileReadWrite()
+		err = fMgr.OpenThisFileReadWrite()
 
 		if err != nil {
 			return 0, fmt.Errorf(ePrefix + " - fMgr.OpenThisFileReadWrite() returned errors: %v", err.Error())

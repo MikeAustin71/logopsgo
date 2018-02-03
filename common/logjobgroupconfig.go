@@ -2,7 +2,6 @@ package common
 
 import (
 	"fmt"
-	"os"
 	"strings"
 	"time"
 )
@@ -27,90 +26,66 @@ const (
 // LogJobGroup - holds logging configuration for the
 // current group of jobs
 type LogJobGroup struct {
-	LogMode                LoggingMode
-	StartTimeUTC           time.Time
-	StartTime              time.Time
-	EndTimeUTC             time.Time
-	EndTime                time.Time
-	Duration               time.Time
-	Dtfmt                  *DateTimeFormatUtility
-	CommandFileName        string
-	AppName                string
-	AppExeFileName         string
-	AppVersion             string
-	AppPath                string
-	AppLogFileName         string
-	AppLogDir              string
-	AppLogPathFileName     string
-	AppLogDirDeletedFiles  DirectoryDeleteFileInfo
-	LogFilePtr             *os.File
-	Banner1                string
-	Banner2                string
-	Banner3                string
-	Banner4                string
-	Banner5                string
-	Banner6                string
-	Banner7                string
-	BannerLen              int
-	LeftTab                string
-	BaseStartDir           string
-	AppNoOfJobs            int
-	NoOfJobGroupMsgs       int
-	NoOfJobsCompleted      int
-	LogFileRetentionInDays int
-	NoOfLogFilesPurged     int
-	CmdExeDir              string
+	LogMode                	LoggingMode
+	AppVersion              string
+	AppName                 string
+	AppPathFileNameExt      FileMgr
+	AppStartTimeTzu         TimeZoneUtility 	// Time Zone Utility Containing App StartUp time
+	AppErrPathFileNameExt		FileMgr
+	BaseStartDir            DirMgr
+	CurrentDirPath          DirMgr
+	CmdPathFileNameExt      FileMgr
+	BatchStartTimeTzu       TimeZoneUtility
+	IanaTimeZone						string
+	LogPathFileNameExt      FileMgr
+	NoOfJobs                int
+	LogFileRetentionInDays  int
 	KillAllJobsOnFirstError bool
-	IanaTimeZone            string
+	StartTimeUTC           	time.Time
+	StartTime              	time.Time
+	EndTimeUTC             	time.Time
+	EndTime                	time.Time
+	Duration               	time.Time
+	Dtfmt                  	*DateTimeFormatUtility
+	Banner1                	string
+	Banner2                	string
+	Banner3                	string
+	Banner4                	string
+	Banner5                	string
+	Banner6                	string
+	Banner7                	string
+	BannerLen              	int
+	LeftTab                	string
+	AppNoOfJobs            	int
+	NoOfJobGroupMsgs       	int
+	NoOfJobsCompleted      	int
+	PurgeFileInfo						DirectoryDeleteFileInfo
+	NoOfLogFilesPurged     	int
 }
 
 // New - Initializes key
 // elements of a Logging Configuration
-func (logOps *LogJobGroup) New(startParams StartupParameters,
-																	parent []OpsMsgContextInfo) OpsMsgDto {
+func (logOps *LogJobGroup) New(parent []OpsMsgContextInfo) OpsMsgDto {
 
-	var err error
 
 	om := logOps.baseLogErrConfig(parent, "New()")
 
 	// Assumes CreateAllFormatsInMemory() has
 	// already been called.
-	logOps.Dtfmt = startParams.Dtfmt
+	logOps.StartTimeUTC = logOps.BatchStartTimeTzu.TimeUTC
+	logOps.StartTime = logOps.BatchStartTimeTzu.TimeOut
+	logOps.AppName = logOps.AppPathFileNameExt.FileName
 
-	logOps.LogMode = startParams.LogMode
-	logOps.StartTimeUTC = startParams.StartTimeUTC
-	logOps.StartTime = startParams.StartTime
-	logOps.CommandFileName = startParams.CommandFileName
-	logOps.AppName = startParams.AppName
-	logOps.AppExeFileName = startParams.AppExeFileName
-	logOps.AppPath = startParams.AppPath
-	logOps.BaseStartDir = startParams.BaseStartDir
-	logOps.AppVersion = startParams.AppVersion
-	logOps.AppNoOfJobs = startParams.NoOfJobs
-	logOps.LogFileRetentionInDays = startParams.LogFileRetentionInDays
-	logOps.CmdExeDir = startParams.CmdExeDir
-	logOps.KillAllJobsOnFirstError = startParams.KillAllJobsOnFirstError
-	logOps.IanaTimeZone = startParams.IanaTimeZone
+	om = logOps.purgeOldLogFiles(om.GetNewParentHistory())
 
-
-	if startParams.AppLogFileName == "" {
-		logOps.AppLogFileName = logOps.AppName
-	}
-
-	fh := FileHelper{}
-
-	logOps.AppLogDir, err = fh.MakeAbsolutePath(startParams.AppLogPath)
-
-	if err != nil {
-		s := fmt.Sprintf("MakeAbsolutePath Failed for AppLogPath '%v'", startParams.AppLogPath)
-		om.SetFatalError(s, err, 101)
+	if om.IsFatalError() {
 		return om
 	}
 
-	omx := logOps.InitializeLogFile(om.GetNewParentHistory())
+	om = logOps.InitializeLogFile(om.GetNewParentHistory())
 
-	if omx.IsFatalError() {
-		panic(omx)
+	if om.IsFatalError() {
+		return om
 	}
 
 
@@ -132,13 +107,7 @@ func (logOps *LogJobGroup) New(startParams StartupParameters,
 
 	logOps.LeftTab = strings.Repeat(" ", 2)
 
-	logOps.BaseStartDir, err = fh.GetAbsCurrDir()
 
-	if err != nil {
-		s := "GetAbsCurrDir() Failed!"
-		om.SetFatalError(s, err, 102)
-		return om
-	}
 
 	return logOps.writeJobGroupHeaderToLog(om.GetNewParentHistory())
 
@@ -152,56 +121,57 @@ func (logOps *LogJobGroup) InitializeLogFile(parent []OpsMsgContextInfo) OpsMsgD
 	var err error
 	om := logOps.baseLogErrConfig(parent, "InitializeLogFile()")
 
-	dt := DateTimeUtility{}
-	logOps.AppLogFileName = logOps.AppLogFileName + "_" + dt.GetDateTimeStr(logOps.StartTime) + ".log"
 
-	fh := FileHelper{}
 
-	logOps.AppLogPathFileName = fh.JoinPathsAdjustSeparators(logOps.AppLogDir, logOps.AppLogFileName)
-
-	if !fh.DoesFileExist(logOps.AppLogDir) {
-
-		err = fh.MakeDirAll(logOps.AppLogDir)
-
-		if err != nil {
-			s := fmt.Sprintf("MakeDirAll() Failed on Dir: %v", logOps.AppLogDir)
-			om.SetFatalError(s, err, 201)
-			return om
-		}
-
-	}
-
-	// At this point, logOps.AppLogPath exists.
-	// Check to determine if the log file exists.
-	// If log file already exists, delete it.
-	if fh.DoesFileExist(logOps.AppLogPathFileName) {
-
-		err = fh.DeleteDirFile(logOps.AppLogPathFileName)
-
-		if err != nil {
-			s := fmt.Sprintf("DeleteDirFile() Failed on File: %v", logOps.AppLogPathFileName)
-			om.SetFatalError(s, err, 202)
-			return om
-		}
-	}
-
-	// Create a new log file
-	logOps.LogFilePtr, err = fh.CreateFile(logOps.AppLogPathFileName)
-
-	if err != nil {
-		s := fmt.Sprintf("CreateFile() Failed on File: %v Error: %v", logOps.AppLogPathFileName, err.Error())
-		om.SetFatalError(s, err, 203)
+	if !logOps.LogPathFileNameExt.DMgr.IsInitialized {
+		s := "logOps.LogPath DirMgr ERROR!"
+		err = fmt.Errorf("ERROR - logOps.LogPath DirMgr NOT Initialized! DirectoryPath='%v'", logOps.LogPathFileNameExt.DMgr.AbsolutePath)
+		om.SetFatalError(s, err, 201)
+		logOps.AppErrPathFileNameExt.WriteStrToFile(om.Error())
 		return om
 	}
 
-	om2 := logOps.purgeOldLogFiles(om.GetNewParentHistory())
+	err = logOps.LogPathFileNameExt.DMgr.IsDirMgrValid("")
 
-	if om2.IsFatalError() {
-
-		return om2
+	if err != nil {
+		s:= fmt.Sprintf("logOps.LogPath DirMgr Object is INVALID! DirectoryPath='%v'", logOps.LogPathFileNameExt.DMgr.AbsolutePath)
+		om.SetFatalError(s, err, 203)
+		logOps.AppErrPathFileNameExt.WriteStrToFile(om.Error())
+		return om
 	}
 
-	om.SetSuccessfulCompletionMessage("Finished InitializeLogFile", 209)
+	err = logOps.LogPathFileNameExt.DMgr.MakeDir()
+
+	if err != nil {
+		s := fmt.Sprintf("MakeAbsolutePath Failed for LogPath '%v'", logOps.LogPathFileNameExt.DMgr.AbsolutePath)
+		om.SetFatalError(s, err, 205)
+		logOps.AppErrPathFileNameExt.WriteStrToFile(om.Error())
+		return om
+	}
+
+
+	logOps.LogPathFileNameExt.DMgr.DoesDirectoryExist()
+
+	if !logOps.LogPathFileNameExt.DMgr.PathDoesExist || !logOps.LogPathFileNameExt.DMgr.AbsolutePathDoesExist {
+
+			s := "Log Directory Does NOT Exist"
+			err = fmt.Errorf("After Make Directory Attempt, Log Directory DOES NOT EXIST! LogPath='%v'", logOps.LogPathFileNameExt.DMgr.AbsolutePath)
+			om.SetFatalError(s, err, 207)
+			logOps.AppErrPathFileNameExt.WriteStrToFile(om.Error())
+			return om
+
+	}
+
+	err = logOps.LogPathFileNameExt.CreateDirAndFile()
+
+	if err != nil {
+		s := fmt.Sprintf("Error returned from LogPathFileNameExt.CreateDirAndFile(). Log File='%v'\n", logOps.LogPathFileNameExt.AbsolutePathFileName )
+		om.SetFatalError(s, err, 209)
+		logOps.AppErrPathFileNameExt.WriteStrToFile(om.Error())
+		return om
+	}
+
+	om.SetSuccessfulCompletionMessage("Finished InitializeLogFile", 299)
 
 	return om
 }
@@ -213,12 +183,36 @@ func (logOps *LogJobGroup) purgeOldLogFiles(parent []OpsMsgContextInfo) OpsMsgDt
 
 	om := logOps.baseLogErrConfig(parent, "purgeOldLogFiles()")
 
-	fh := FileHelper{}
-
 	if logOps.LogFileRetentionInDays < 0 {
 		om.SetSuccessfulCompletionMessage("Finished purgeOldLogFiles - No Log Files To Delete.", 1801)
 		return om
 	}
+
+	var err error
+
+	if !logOps.LogPathFileNameExt.DMgr.IsInitialized {
+		err = fmt.Errorf("Error: LogPathFileNameExt Directory Manager is NOT INITIALIZED!")
+		om.SetFatalError("", err, 1801)
+		logOps.AppErrPathFileNameExt.WriteStrToFile(om.Error())
+		return om
+
+	}
+
+	err = logOps.LogPathFileNameExt.IsFileMgrValid("")
+
+	if err != nil {
+		s := fmt.Sprintf("Error returned by LogPathFileNameExt.IsFileMgrValid(). Error: %v", err.Error())
+		om.SetFatalError(s, err, 1803)
+		logOps.AppErrPathFileNameExt.WriteStrToFile(om.Error())
+		return om
+	}
+
+
+	if !logOps.LogPathFileNameExt.DMgr.DoesDirMgrAbsolutePathExist() {
+		om.SetSuccessfulCompletionMessage("Finished purgeOldLogFiles - Log Directory Does NOT Exist.", 1805)
+		return om
+	}
+
 
 	logDur := time.Duration(logOps.LogFileRetentionInDays*24*-1) * time.Hour
 	du := DurationUtility{}
@@ -226,27 +220,33 @@ func (logOps *LogJobGroup) purgeOldLogFiles(parent []OpsMsgContextInfo) OpsMsgDt
 	thresholdTime := du.StartDateTime
 
 	if thresholdTime.IsZero() {
-		om.SetSuccessfulCompletionMessage("Finished purgeOldLogFiles - thresholdTime is Zero.", 1802)
+		om.SetSuccessfulCompletionMessage("Finished purgeOldLogFiles - thresholdTime is Zero.", 1807)
 		return om
 	}
 
+	searchPattern := "*.log"
+	filesOlderThan := thresholdTime
+	filesNewerThan := time.Time{}
 
-	var err error
+	fsc := FileSelectionCriteria{}
 
-	logOps.AppLogDirDeletedFiles.StartPath = logOps.AppLogDir
-	logOps.AppLogDirDeletedFiles.DeleteFileSelectCriteria.FileNamePatterns = []string {"*.log"}
-	logOps.AppLogDirDeletedFiles.DeleteFileSelectCriteria.FilesOlderThan = thresholdTime
-	logOps.AppLogDirDeletedFiles, err = fh.DeleteFilesWalkDir(logOps.AppLogDirDeletedFiles.StartPath, logOps.AppLogDirDeletedFiles.DeleteFileSelectCriteria)
+	fsc.FileNamePatterns = []string{searchPattern}
+	fsc.FilesOlderThan = filesOlderThan
+	fsc.FilesNewerThan = filesNewerThan
+	fsc.SelectCriterionMode = ANDFILESELECTCRITERION
+
+	logOps.PurgeFileInfo, err = logOps.LogPathFileNameExt.DMgr.DeleteWalkDirFiles(fsc)
 
 	if err != nil {
-		s := fmt.Sprintf("fh.DeleteFilesWalkDir Failed on File: %v Error: %v", logOps.AppLogPathFileName, err.Error())
-		om.SetFatalError(s, err, 1803)
+		s := fmt.Sprintf("Error returned by LogPathFileNameExt.DMgr.DeleteWalkDirFiles(fsc). Error: %v", err.Error())
+		om.SetFatalError(s, err, 1809)
+		logOps.AppErrPathFileNameExt.WriteStrToFile(om.Error())
 		return om
 	}
 
-	logOps.NoOfLogFilesPurged = len(logOps.AppLogDirDeletedFiles.DeletedFiles.FMgrs)
+	logOps.NoOfLogFilesPurged = len(logOps.PurgeFileInfo.DeletedFiles.FMgrs)
 	s:= fmt.Sprintf("Finished purgeOldLogFiles - Successfully Purged %v old Log Files.", logOps.NoOfLogFilesPurged)
-	om.SetSuccessfulCompletionMessage(s,1809 )
+	om.SetSuccessfulCompletionMessage(s,1899 )
 	return om
 
 }
@@ -264,9 +264,10 @@ func (logOps *LogJobGroup) writeJobGroupHeaderToLog(parent []OpsMsgContextInfo) 
 
 	thisParentInfo := om.GetNewParentHistory()
 
-	if logOps.LogFilePtr == nil {
-		s := "logOps.LogFilePtr was not correctly initialized! logOps.LogFilePtr *os.File pointer is nil!"
+	if logOps.LogPathFileNameExt.FilePtr == nil {
+		s := "logOps.LogPathFileNameExt.FilePtr was not correctly initialized! logOps.LogPathFileNameExt.FilePtr *os.File pointer is nil!"
 		om.SetFatalErrorMessage(s, 301)
+		logOps.AppErrPathFileNameExt.WriteStrToFile(om.Error())
 		return om
 	}
 
@@ -279,6 +280,7 @@ func (logOps *LogJobGroup) writeJobGroupHeaderToLog(parent []OpsMsgContextInfo) 
 	if err != nil {
 		s := "StrCenterInStrLeft threw error on AppName AppVersion"
 		om.SetFatalError(s, err, 302)
+		logOps.AppErrPathFileNameExt.WriteStrToFile(om.Error())
 		return om
 	}
 
@@ -286,12 +288,13 @@ func (logOps *LogJobGroup) writeJobGroupHeaderToLog(parent []OpsMsgContextInfo) 
 
 	logOps.writeFileStr(logOps.Banner1, thisParentInfo)
 
-	str = fmt.Sprintf("Execution Job Group Command File: %v \n", logOps.CommandFileName)
+	str = fmt.Sprintf("Execution Job Group Command File: %v \n", logOps.CmdPathFileNameExt.FileNameExt)
 
 	stx, err = su.StrCenterInStrLeft(str, logOps.BannerLen)
 	if err != nil {
 		s := "StrCenterInStr threw error on Command File Name"
 		om.SetFatalError(s, err, 303)
+		logOps.AppErrPathFileNameExt.WriteStrToFile(om.Error())
 		return om
 	}
 
@@ -303,6 +306,7 @@ func (logOps *LogJobGroup) writeJobGroupHeaderToLog(parent []OpsMsgContextInfo) 
 	if err != nil {
 		s := "StrCenterInStr threw error on Number of Jobs Executed"
 		om.SetFatalError(s, err, 304)
+		logOps.AppErrPathFileNameExt.WriteStrToFile(om.Error())
 		return om
 	}
 
@@ -328,28 +332,32 @@ func (logOps *LogJobGroup) writeJobGroupHeaderToLog(parent []OpsMsgContextInfo) 
 
 	logOps.writeFileStr(logOps.Banner3, thisParentInfo)
 
-	str = "Initial Application Path: \n"
-
+	str = "This Application Executable File:\n"
 	logOps.writeTabFileStr(str, 1, thisParentInfo)
-
-	str = logOps.AppPath + "\n\n"
-
+	str = logOps.AppPathFileNameExt.AbsolutePathFileName + "\n\n"
 	logOps.writeTabFileStr(str, 2, thisParentInfo)
 
 
 	str = "This Log File:\n"
-
 	logOps.writeTabFileStr(str, 1, thisParentInfo)
+	str = logOps.LogPathFileNameExt.AbsolutePathFileName + "\n\n"
+	logOps.writeTabFileStr(str, 2, thisParentInfo)
 
-	str = logOps.AppLogPathFileName + "\n\n"
+	str = "Command File:\n"
+	logOps.writeTabFileStr(str, 1, thisParentInfo)
+	str = logOps.CmdPathFileNameExt.AbsolutePathFileName + "\n\n"
+	logOps.writeTabFileStr(str, 2, thisParentInfo)
 
+	str = "Initial Application Path: \n"
+	logOps.writeTabFileStr(str, 1, thisParentInfo)
+	str = logOps.AppPathFileNameExt.DMgr.AbsolutePath + "\n\n"
 	logOps.writeTabFileStr(str, 2, thisParentInfo)
 
 	str = "Base Start Directory:\n"
 	logOps.writeTabFileStr(str, 1, thisParentInfo)
-
-	str = logOps.BaseStartDir + "\n"
+	str = logOps.BaseStartDir.AbsolutePath + "\n\n"
 	logOps.writeTabFileStr(str, 2, thisParentInfo)
+
 	logOps.writeFileStr(logOps.Banner3, thisParentInfo)
 
 	str = fmt.Sprintf("Number Of Old Log Files Deleted: %v \n", logOps.NoOfLogFilesPurged)
@@ -363,7 +371,7 @@ func (logOps *LogJobGroup) writeJobGroupHeaderToLog(parent []OpsMsgContextInfo) 
 		logOps.writeTabFileStr(stx, 1, thisParentInfo)
 		logOps.writeFileStr(logOps.Banner4, thisParentInfo)
 		for i := 0; i < logOps.NoOfLogFilesPurged; i++ {
-			fMgr := logOps.AppLogDirDeletedFiles.DeletedFiles.FMgrs[i]
+			fMgr := logOps.PurgeFileInfo.DeletedFiles.FMgrs[i]
 
 			str = fmt.Sprintf("%v. File Date: %v   File Name: %v \n",
 				i+1, fMgr.ActualFileInfo.ModTime().Format(FmtDateTimeSecText),  fMgr.ActualFileInfo.Name())
@@ -374,7 +382,7 @@ func (logOps *LogJobGroup) writeJobGroupHeaderToLog(parent []OpsMsgContextInfo) 
 		logOps.writeFileStr(logOps.Banner4, thisParentInfo)
 	}
 
-	logOps.AppLogDirDeletedFiles = DirectoryDeleteFileInfo{}
+	logOps.PurgeFileInfo = DirectoryDeleteFileInfo{}
 	logOps.writeFileStr(logOps.Banner1, thisParentInfo)
 	logOps.writeFileStr(logOps.Banner1, thisParentInfo)
 
@@ -395,14 +403,14 @@ func (logOps *LogJobGroup) WriteJobGroupFooterToLog(cmds CommandBatch, parent []
 
 	thisParentInfo := om.GetNewParentHistory()
 
-	if logOps.LogFilePtr == nil {
-		s := "logOps.LogFilePtr was not correctly initialized! logOps.LogFilePtr *os.File pointer is nil!"
+	if logOps.LogPathFileNameExt.FilePtr == nil {
+		s := "logOps.LogPathFileNameExt.FilePtr was not correctly initialized! logOps.LogPathFileNameExt.FilePtr *os.File pointer is nil!"
 		om.SetFatalErrorMessage(s, 801)
-		om.LogMsgToFile(logOps.LogFilePtr)
+		logOps.AppErrPathFileNameExt.WriteStrToFile(om.Error())
 		return om
 	}
 
-	defer logOps.LogFilePtr.Close()
+	defer logOps.LogPathFileNameExt.CloseFile()
 
 	logOps.writeFileStr("\n\n", thisParentInfo)
 	logOps.writeFileStr(logOps.Banner1, thisParentInfo)
@@ -415,7 +423,7 @@ func (logOps *LogJobGroup) WriteJobGroupFooterToLog(cmds CommandBatch, parent []
 	if err != nil {
 		s := "StrCenterInStr threw error on Job Group Execution Title"
 		om.SetFatalError(s, err, 802)
-		om.LogMsgToFile(logOps.LogFilePtr)
+		logOps.AppErrPathFileNameExt.WriteStrToFile(om.Error())
 		return om
 	}
 
@@ -427,20 +435,20 @@ func (logOps *LogJobGroup) WriteJobGroupFooterToLog(cmds CommandBatch, parent []
 	if err != nil {
 		s := "StrCenterInStr threw error on AppName AppVersion"
 		om.SetFatalError(s, err, 803)
-		om.LogMsgToFile(logOps.LogFilePtr)
+		logOps.AppErrPathFileNameExt.WriteStrToFile(om.Error())
 		return om
 	}
 
 	logOps.writeFileStr(stx, thisParentInfo)
 	logOps.writeFileStr(logOps.Banner2, thisParentInfo)
 
-	str = fmt.Sprintf("Execution Job Group Command File: %v \n", logOps.CommandFileName)
+	str = fmt.Sprintf("Execution Job Group Command File: %v \n", logOps.CmdPathFileNameExt.FileNameExt)
 
 	stx, err = su.StrCenterInStrLeft(str, logOps.BannerLen)
 	if err != nil {
 		s := "StrCenterInStr threw error on Command File Name"
 		om.SetFatalError(s, err, 804)
-		om.LogMsgToFile(logOps.LogFilePtr)
+		logOps.AppErrPathFileNameExt.WriteStrToFile(om.Error())
 		return om
 	}
 
@@ -505,7 +513,7 @@ func (logOps *LogJobGroup) WriteJobGroupFooterToLog(cmds CommandBatch, parent []
 	if err != nil {
 		s := "StrCenterInStr threw error on End of Job Group Execution"
 		om.SetFatalError(s, err, 805)
-		om.LogMsgToFile(logOps.LogFilePtr)
+		logOps.AppErrPathFileNameExt.WriteStrToFile(om.Error())
 		return om
 	}
 
@@ -538,7 +546,7 @@ func (logOps *LogJobGroup) WriteCmdJobHeaderToLog(job *CmdJob, parent []OpsMsgCo
 	if err != nil {
 		s := "StrCenterInStrLeft threw error on Starting Command Job Execution"
 		om.SetFatalError(s, err, 2501)
-		om.LogMsgToFile(logOps.LogFilePtr)
+		logOps.AppErrPathFileNameExt.WriteStrToFile(om.Error())
 		return om
 	}
 
@@ -549,7 +557,7 @@ func (logOps *LogJobGroup) WriteCmdJobHeaderToLog(job *CmdJob, parent []OpsMsgCo
 	if err != nil {
 		s := "StrCenterInStr threw error on Starting Command Job Display Name"
 		om.SetFatalError(s, err, 2502)
-		om.LogMsgToFile(logOps.LogFilePtr)
+		logOps.AppErrPathFileNameExt.WriteStrToFile(om.Error())
 		return om
 	}
 
@@ -560,8 +568,7 @@ func (logOps *LogJobGroup) WriteCmdJobHeaderToLog(job *CmdJob, parent []OpsMsgCo
 	if err != nil {
 		s := "StrCenterInStrLeft threw error on Starting Command Job Number"
 		om.SetFatalError(s, err, 2503)
-		om.LogMsgToFile(logOps.LogFilePtr)
-
+		logOps.AppErrPathFileNameExt.WriteStrToFile(om.Error())
 		return om
 	}
 
@@ -647,6 +654,7 @@ func (logOps *LogJobGroup) WriteCmdJobHeaderToLog(job *CmdJob, parent []OpsMsgCo
 	if err != nil {
 		s := "StrCenterInStr threw error on Command Job Start Times"
 		om.SetFatalError(s, err, 2504)
+		logOps.AppErrPathFileNameExt.WriteStrToFile(om.Error())
 		return om
 	}
 
@@ -685,9 +693,10 @@ func (logOps *LogJobGroup) WriteCmdJobFooterToLog(job *CmdJob, parent []OpsMsgCo
 	if err != nil {
 		s := "StrCenterInStr threw error on Completed Command Job Execution"
 		om.SetFatalError(s, err, 2601)
-		om.LogMsgToFile(logOps.LogFilePtr)
+		logOps.AppErrPathFileNameExt.WriteStrToFile(om.Error())
 		return om
 	}
+
 	logOps.writeFileStr(stx, thisParentInfo)
 	logOps.writeFileStr(logOps.Banner5, thisParentInfo)
 	str = "Job Execution Results\n"
@@ -695,7 +704,7 @@ func (logOps *LogJobGroup) WriteCmdJobFooterToLog(job *CmdJob, parent []OpsMsgCo
 	if err != nil {
 		s := "StrCenterInStr threw error on Completed Command Job Execution"
 		om.SetFatalError(s, err, 2602)
-		om.LogMsgToFile(logOps.LogFilePtr)
+		logOps.AppErrPathFileNameExt.WriteStrToFile(om.Error())
 		return om
 	}
 
@@ -706,7 +715,7 @@ func (logOps *LogJobGroup) WriteCmdJobFooterToLog(job *CmdJob, parent []OpsMsgCo
 	if err != nil {
 		s := "StrCenterInStr threw error on Completing Command Job Display Name"
 		om.SetFatalError(s, err, 2603)
-		om.LogMsgToFile(logOps.LogFilePtr)
+		logOps.AppErrPathFileNameExt.WriteStrToFile(om.Error())
 		return om
 	}
 
@@ -717,7 +726,7 @@ func (logOps *LogJobGroup) WriteCmdJobFooterToLog(job *CmdJob, parent []OpsMsgCo
 	if err != nil {
 		s := "StrCenterInStr threw error on Completing Command Job Number"
 		om.SetFatalError(s, err, 2604)
-		om.LogMsgToFile(logOps.LogFilePtr)
+		logOps.AppErrPathFileNameExt.WriteStrToFile(om.Error())
 		return om
 	}
 
@@ -728,7 +737,7 @@ func (logOps *LogJobGroup) WriteCmdJobFooterToLog(job *CmdJob, parent []OpsMsgCo
 	}
 
 	logOps.writeFileStr(logOps.Banner5, thisParentInfo)
-	str = fmt.Sprintf("Command Execution Status: %v", job.CmdJobExecutionStatus)
+	str = fmt.Sprintf("Command Execution Status: %v\n", job.CmdJobExecutionStatus)
 	logOps.writeTabFileStr(str, 1, thisParentInfo)
 
 	logOps.writeFileStr(logOps.Banner2, thisParentInfo)
@@ -792,7 +801,7 @@ func (logOps *LogJobGroup) WriteCmdJobFooterToLog(job *CmdJob, parent []OpsMsgCo
 	if err != nil {
 		s := "StrCenterInStr threw error on Command Job Execution Times"
 		om.SetFatalError(s, err, 2605)
-		om.LogMsgToFile(logOps.LogFilePtr)
+		logOps.AppErrPathFileNameExt.WriteStrToFile(om.Error())
 		return om
 	}
 
@@ -846,7 +855,7 @@ func (logOps *LogJobGroup) WriteCmdJobFooterToLog(job *CmdJob, parent []OpsMsgCo
 	if err != nil {
 		s := "StrCenterInStr threw error on End of Command Job Number"
 		om.SetFatalError(s, err, 2606)
-		om.LogMsgToFile(logOps.LogFilePtr)
+		logOps.AppErrPathFileNameExt.WriteStrToFile(om.Error())
 		return om
 	}
 
@@ -888,11 +897,12 @@ func (logOps *LogJobGroup) writeTabFileStr(s string, noOfTabs int, parent []OpsM
 
 	stx += s
 
-	_, err := logOps.LogFilePtr.WriteString(stx)
+	_, err := logOps.LogPathFileNameExt.WriteStrToFile(stx)
 
 	if err != nil {
 		s := fmt.Sprintf("LogFilePtr.WriteString threw error on string: '%v'", stx)
 		om.SetFatalError(s, err, 1001)
+		logOps.AppErrPathFileNameExt.WriteStrToFile(om.Error())
 		panic(om)
 	}
 
@@ -900,13 +910,14 @@ func (logOps *LogJobGroup) writeTabFileStr(s string, noOfTabs int, parent []OpsM
 
 func (logOps *LogJobGroup) writeFileStr(s string, parent []OpsMsgContextInfo) {
 
-	_, err := logOps.LogFilePtr.WriteString(s)
+	_, err := logOps.LogPathFileNameExt.WriteStrToFile(s)
 
 	om := logOps.baseLogErrConfig(parent, "writeFileStr()")
 
 	if err != nil {
 		s := fmt.Sprintf("LogFilePtr.WriteString threw error on string: '%v'", s)
 		om.SetFatalError(s, err, 901)
+		logOps.AppErrPathFileNameExt.WriteStrToFile(om.Error())
 		panic(om)
 	}
 
