@@ -1,9 +1,10 @@
 package common
 
 import (
+	dt "MikeAustin71/datetimeopsgo/datetime"
 	"fmt"
-	"strings"
 	"time"
+	"strings"
 )
 
 /*  'logjobgroupconfig.go' is located in source code
@@ -26,41 +27,40 @@ const (
 // LogJobGroup - holds logging configuration for the
 // current group of jobs
 type LogJobGroup struct {
-	LogMode                	LoggingMode
+	LogMode                 LoggingMode
 	AppVersion              string
 	AppName                 string
 	AppPathFileNameExt      FileMgr
-	AppStartTimeTzu         TimeZoneUtility 	// Time Zone Utility Containing App StartUp time
-	AppErrPathFileNameExt		FileMgr
+	AppStartTimeDto         dt.TimeZoneDto // Time Zone Dto Containing App StartUp time
+	AppDateTimeFormat       string
+	AppErrPathFileNameExt   FileMgr
 	BaseStartDir            DirMgr
 	CurrentDirPath          DirMgr
 	CmdPathFileNameExt      FileMgr
-	BatchStartTimeTzu       TimeZoneUtility
-	IanaTimeZone						string
+	BatchStartTimeDto       dt.TimeZoneDto
+	IanaTimeZone            string
 	LogPathFileNameExt      FileMgr
 	NoOfJobs                int
 	LogFileRetentionInDays  int
 	KillAllJobsOnFirstError bool
-	StartTimeUTC           	time.Time
-	StartTime              	time.Time
-	EndTimeUTC             	time.Time
-	EndTime                	time.Time
-	Duration               	time.Time
-	Dtfmt                  	*DateTimeFormatUtility
-	Banner1                	string
-	Banner2                	string
-	Banner3                	string
-	Banner4                	string
-	Banner5                	string
+	StartTime               dt.TimeZoneDto
+	EndTime                 dt.TimeZoneDto
+	Duration                dt.DurationTriad
+	Dtfmt                   * dt.FormatDateTimeUtility
+	Banner1                 string
+	Banner2                 string
+	Banner3                 string
+	Banner4                 string
+	Banner5                 string
 	Banner6                	string
 	Banner7                	string
-	BannerLen              	int
-	LeftTab                	string
-	AppNoOfJobs            	int
-	NoOfJobGroupMsgs       	int
-	NoOfJobsCompleted      	int
-	PurgeFileInfo						DirectoryDeleteFileInfo
-	NoOfLogFilesPurged     	int
+	BannerLen               int
+	LeftTab                 string
+	AppNoOfJobs             int
+	NoOfJobGroupMsgs        int
+	NoOfJobsCompleted       int
+	PurgeFileInfo           DirectoryDeleteFileInfo
+	NoOfLogFilesPurged      int
 }
 
 // New - Initializes key
@@ -72,8 +72,8 @@ func (logOps *LogJobGroup) New(parent []OpsMsgContextInfo) OpsMsgDto {
 
 	// Assumes CreateAllFormatsInMemory() has
 	// already been called.
-	logOps.StartTimeUTC = logOps.BatchStartTimeTzu.TimeUTC
-	logOps.StartTime = logOps.BatchStartTimeTzu.TimeOut
+
+	logOps.StartTime = logOps.BatchStartTimeDto.CopyOut()
 	logOps.AppName = logOps.AppPathFileNameExt.FileName
 
 	om = logOps.purgeOldLogFiles(om.GetNewParentHistory())
@@ -215,9 +215,14 @@ func (logOps *LogJobGroup) purgeOldLogFiles(parent []OpsMsgContextInfo) OpsMsgDt
 
 
 	logDur := time.Duration(logOps.LogFileRetentionInDays*24*-1) * time.Hour
-	du := DurationUtility{}
-	du.SetStartTimeDuration(time.Now(), logDur)
-	thresholdTime := du.StartDateTime
+	du, err := dt.DurationTriad{}.NewStartTimeDurationCalcTz(
+								time.Now().Local(),
+								logDur,
+								dt.TDurCalcTypeSTDYEARMTH,
+								logOps.IanaTimeZone,
+								logOps.AppDateTimeFormat)
+
+	thresholdTime := du.LocalTime.EndTimeDateTz.DateTime
 
 	if thresholdTime.IsZero() {
 		om.SetSuccessfulCompletionMessage("Finished purgeOldLogFiles - thresholdTime is Zero.", 1807)
@@ -312,19 +317,20 @@ func (logOps *LogJobGroup) writeJobGroupHeaderToLog(parent []OpsMsgContextInfo) 
 
 	logOps.writeFileStr(stx, thisParentInfo)
 
-	dt := DateTimeUtility{}
 
 	logOps.writeFileStr(logOps.Banner2, thisParentInfo)
 
-	str = fmt.Sprintf("  Job Group Start Time UTC: %v \n", dt.GetDateTimeYMDAbbrvDowNano(logOps.StartTimeUTC))
+	str = fmt.Sprintf("  Job Group Start Time UTC: %v \n",
+		logOps.StartTime.TimeUTC.GetDateTimeYMDAbbrvDowNano())
 
 	logOps.writeTabFileStr(str, 0, parent)
 
-	str = fmt.Sprintf("Job Group Start Time Local: %v \n", dt.GetDateTimeYMDAbbrvDowNano(logOps.StartTime))
+	str = fmt.Sprintf("Job Group Start Time Local: %v \n",
+		logOps.StartTime.TimeLocal.GetDateTimeYMDAbbrvDowNano())
 
 	logOps.writeTabFileStr(str, 0, parent)
 
-	localZone, _ := logOps.StartTime.Zone()
+	localZone := logOps.StartTime.TimeLocal.TimeZone.ZoneName
 
 	str = fmt.Sprintf(" Job Group Local Time Zone: %v - %v \n", logOps.IanaTimeZone, localZone)
 
@@ -374,7 +380,7 @@ func (logOps *LogJobGroup) writeJobGroupHeaderToLog(parent []OpsMsgContextInfo) 
 			fMgr := logOps.PurgeFileInfo.DeletedFiles.FMgrs[i]
 
 			str = fmt.Sprintf("%v. File Date: %v   File Name: %v \n",
-				i+1, fMgr.ActualFileInfo.ModTime().Format(FmtDateTimeSecText),  fMgr.ActualFileInfo.Name())
+				i+1, fMgr.ActualFileInfo.ModTime().Format(dt.FmtDateTimeSecText),  fMgr.ActualFileInfo.Name())
 
 			logOps.writeTabFileStr(str, 2, thisParentInfo)
 		}
@@ -405,7 +411,7 @@ func (logOps *LogJobGroup) WriteJobGroupFooterToLog(cmds CommandBatch, parent []
 
 	if logOps.LogPathFileNameExt.FilePtr == nil {
 		s := "logOps.LogPathFileNameExt.FilePtr was not correctly initialized! logOps.LogPathFileNameExt.FilePtr *os.File pointer is nil!"
-		om.SetFatalErrorMessage(s, 801)
+		om.SetFatalErrorMessage(s, 8001)
 		logOps.AppErrPathFileNameExt.WriteStrToFile(om.Error())
 		return om
 	}
@@ -422,7 +428,7 @@ func (logOps *LogJobGroup) WriteJobGroupFooterToLog(cmds CommandBatch, parent []
 	stx, err = su.StrCenterInStrLeft(str, logOps.BannerLen)
 	if err != nil {
 		s := "StrCenterInStr threw error on Job Group Execution Title"
-		om.SetFatalError(s, err, 802)
+		om.SetFatalError(s, err, 8003)
 		logOps.AppErrPathFileNameExt.WriteStrToFile(om.Error())
 		return om
 	}
@@ -434,7 +440,7 @@ func (logOps *LogJobGroup) WriteJobGroupFooterToLog(cmds CommandBatch, parent []
 	stx, err = su.StrCenterInStrLeft(str, logOps.BannerLen)
 	if err != nil {
 		s := "StrCenterInStr threw error on AppName AppVersion"
-		om.SetFatalError(s, err, 803)
+		om.SetFatalError(s, err, 8005)
 		logOps.AppErrPathFileNameExt.WriteStrToFile(om.Error())
 		return om
 	}
@@ -447,7 +453,7 @@ func (logOps *LogJobGroup) WriteJobGroupFooterToLog(cmds CommandBatch, parent []
 	stx, err = su.StrCenterInStrLeft(str, logOps.BannerLen)
 	if err != nil {
 		s := "StrCenterInStr threw error on Command File Name"
-		om.SetFatalError(s, err, 804)
+		om.SetFatalError(s, err, 8007)
 		logOps.AppErrPathFileNameExt.WriteStrToFile(om.Error())
 		return om
 	}
@@ -465,36 +471,47 @@ func (logOps *LogJobGroup) WriteJobGroupFooterToLog(cmds CommandBatch, parent []
 
 	logOps.writeFileStr(logOps.Banner3, thisParentInfo)
 
-	dt := DateTimeUtility{}
-
 	stx = "Job Group Execution Times:\n"
 	logOps.writeTabFileStr(stx, 1, thisParentInfo)
 	logOps.writeFileStr(logOps.Banner4, thisParentInfo)
-	str = dt.GetDateTimeYMDAbbrvDowNano(logOps.StartTimeUTC)
+	str = logOps.StartTime.TimeUTC.GetDateTimeYMDAbbrvDowNano()
 	stx = fmt.Sprintf("JobGroup   Start Time UTC: %v \n", str)
 	logOps.writeTabFileStr(stx, 1, thisParentInfo)
 
-	logOps.EndTimeUTC = cmds.CmdJobsHdr.CmdBatchEndUTC
+	om2 := cmds.SetBatchEndTime(thisParentInfo)
+
+	if om2.IsFatalError() {
+		logOps.AppErrPathFileNameExt.WriteStrToFile(om2.Error())
+		return om2
+	}
+
 	logOps.EndTime = cmds.CmdJobsHdr.CmdBatchEndTime
-	str = dt.GetDateTimeYMDAbbrvDowNano(logOps.EndTimeUTC)
-	stx = fmt.Sprintf("JobGroup     End Time UTC: %v \n", str)
+
+
+	stx = fmt.Sprintf("JobGroup     End Time UTC: %v \n",
+				logOps.EndTime.TimeUTC.GetDateTimeYMDAbbrvDowNano())
+
 	logOps.writeTabFileStr(stx, 1, thisParentInfo)
 
 	logOps.writeFileStr(logOps.Banner4, thisParentInfo)
 
-	str = dt.GetDateTimeYMDAbbrvDowNano(logOps.StartTime)
-	stx = fmt.Sprintf("JobGroup Start Time Local: %v \n", str)
+
+	stx = fmt.Sprintf("JobGroup Start Time Local: %v \n",
+					logOps.StartTime.TimeLocal.GetDateTimeYMDAbbrvDowNano())
+
 	logOps.writeTabFileStr(stx, 1, thisParentInfo)
 
-	str = dt.GetDateTimeYMDAbbrvDowNano(logOps.EndTime)
-	stx = fmt.Sprintf("JobGroup   End Time Local: %v \n", str)
+
+	stx = fmt.Sprintf("JobGroup   End Time Local: %v \n",
+						logOps.EndTime.TimeLocal.GetDateTimeYMDAbbrvDowNano())
+
 	logOps.writeTabFileStr(stx, 1, thisParentInfo)
 
 	logOps.writeFileStr(logOps.Banner4, thisParentInfo)
 
-	tzLocal, _ := logOps.EndTime.Zone()
+	stx = fmt.Sprintf("JobGroup  Local Time Zone: %v - %v\n", logOps.IanaTimeZone,
+							logOps.EndTime.TimeLocal.TimeZone.ZoneName)
 
-	stx = fmt.Sprintf("JobGroup  Local Time Zone: %v - %v\n", logOps.IanaTimeZone, tzLocal)
 	logOps.writeTabFileStr(stx, 1, thisParentInfo)
 
 	logOps.writeFileStr(logOps.Banner4, thisParentInfo)
@@ -502,7 +519,7 @@ func (logOps *LogJobGroup) WriteJobGroupFooterToLog(cmds CommandBatch, parent []
 	stx = "JobGroup Elapsed Time:\n"
 	logOps.writeTabFileStr(stx, 1, thisParentInfo)
 	logOps.writeFileStr(logOps.Banner6, thisParentInfo)
-	stx = cmds.CmdJobsHdr.CmdBatchElapsedTime + "\n"
+	stx = cmds.CmdJobsHdr.CmdBatchDuration.UTCTime.GetElapsedTimeStr() + "\n"
 	logOps.writeTabFileStr(stx, 1, thisParentInfo)
 	logOps.writeFileStr(logOps.Banner6, thisParentInfo)
 
@@ -512,7 +529,7 @@ func (logOps *LogJobGroup) WriteJobGroupFooterToLog(cmds CommandBatch, parent []
 	stx, err = su.StrCenterInStrLeft(str, logOps.BannerLen)
 	if err != nil {
 		s := "StrCenterInStr threw error on End of Job Group Execution"
-		om.SetFatalError(s, err, 805)
+		om.SetFatalError(s, err, 8009)
 		logOps.AppErrPathFileNameExt.WriteStrToFile(om.Error())
 		return om
 	}
@@ -523,7 +540,7 @@ func (logOps *LogJobGroup) WriteJobGroupFooterToLog(cmds CommandBatch, parent []
 	logOps.writeFileStr(logOps.Banner1, thisParentInfo)
 
 	// Signal Successful Completion
-	om.SetSuccessfulCompletionMessage("Finished WriteJobGroupFooterToLog", 809)
+	om.SetSuccessfulCompletionMessage("Finished WriteJobGroupFooterToLog", 8099)
 
 	return om
 }
@@ -661,13 +678,15 @@ func (logOps *LogJobGroup) WriteCmdJobHeaderToLog(job *CmdJob, parent []OpsMsgCo
 	logOps.writeFileStr(stx, thisParentInfo)
 	logOps.writeFileStr(logOps.Banner3, thisParentInfo)
 
-	str = fmt.Sprintf("     Cmd Job Start Time UTC: %v\n", job.CmdJobStartUTC.Format(job.CmdJobTimeFormat))
+	str = fmt.Sprintf("     Cmd Job Start Time UTC: %v\n",
+		job.CmdJobStartTimeValue.TimeUTC.DateTime.Format(logOps.AppDateTimeFormat))
 	logOps.writeTabFileStr(str, 1, thisParentInfo)
 
-	str = fmt.Sprintf("   Cmd Job Start Time Local: %v\n", job.CmdJobStartTimeValue.Format(job.CmdJobTimeFormat))
+	str = fmt.Sprintf("   Cmd Job Start Time Local: %v\n",
+		job.CmdJobStartTimeValue.TimeLocal.DateTime.Format(logOps.AppDateTimeFormat))
 	logOps.writeTabFileStr(str, 1, thisParentInfo)
 
-	tzLocal, _ := job.CmdJobStartTimeValue.Zone()
+	tzLocal := job.CmdJobStartTimeValue.TimeLocal.TimeZone.ZoneName
 	str = fmt.Sprintf("    Cmd Job Local Time Zone: %v - %v\n", job.IanaTimeZone, tzLocal)
 	logOps.writeTabFileStr(str, 1, thisParentInfo)
 
@@ -810,10 +829,12 @@ func (logOps *LogJobGroup) WriteCmdJobFooterToLog(job *CmdJob, parent []OpsMsgCo
 	logOps.writeTabFileStr("UTC Start\\End Times:\n", 1, thisParentInfo)
 	logOps.writeFileStr(logOps.Banner4, thisParentInfo)
 
-	str = fmt.Sprintf(" Cmd Job Start Time UTC: %v\n", job.CmdJobStartUTC.Format(job.CmdJobTimeFormat))
+	str = fmt.Sprintf(" Cmd Job Start Time UTC: %v\n",
+			job.CmdJobStartTimeValue.TimeUTC.DateTime.Format(logOps.AppDateTimeFormat))
 	logOps.writeTabFileStr(str, 1, thisParentInfo)
 
-	str = fmt.Sprintf("   Cmd Job End Time UTC: %v\n", job.CmdJobEndUTC.Format(job.CmdJobTimeFormat))
+	str = fmt.Sprintf("   Cmd Job End Time UTC: %v\n",
+				job.CmdJobEndTimeValue.TimeUTC.DateTime.Format(logOps.AppDateTimeFormat))
 	logOps.writeTabFileStr(str, 1, thisParentInfo)
 
 	logOps.writeFileStr(logOps.Banner4, thisParentInfo)
@@ -822,13 +843,16 @@ func (logOps *LogJobGroup) WriteCmdJobFooterToLog(job *CmdJob, parent []OpsMsgCo
 
 	logOps.writeFileStr(logOps.Banner4, thisParentInfo)
 
-	str = fmt.Sprintf("Cmd Job Start Time Local: %v\n", job.CmdJobStartTimeValue.Format(job.CmdJobTimeFormat))
+	str = fmt.Sprintf("Cmd Job Start Time Local: %v\n",
+		job.CmdJobStartTimeValue.TimeLocal.DateTime.Format(logOps.AppDateTimeFormat))
 	logOps.writeTabFileStr(str, 1, thisParentInfo)
 
-	str = fmt.Sprintf("  Cmd Job End Time Local: %v\n", job.CmdJobEndTimeValue.Format(job.CmdJobTimeFormat))
+	str = fmt.Sprintf("  Cmd Job End Time Local: %v\n",
+			job.CmdJobEndTimeValue.TimeLocal.DateTime.Format(logOps.AppDateTimeFormat))
+
 	logOps.writeTabFileStr(str, 1, thisParentInfo)
 
-	tzLocal, _ := job.CmdJobEndTimeValue.Zone()
+	tzLocal := job.CmdJobEndTimeValue.TimeLocal.TimeZone.ZoneName
 	str = fmt.Sprintf(" Cmd Job Local Time Zone: %v - %v\n", job.IanaTimeZone, tzLocal)
 	logOps.writeTabFileStr(str, 1, thisParentInfo)
 
@@ -838,7 +862,7 @@ func (logOps *LogJobGroup) WriteCmdJobFooterToLog(job *CmdJob, parent []OpsMsgCo
 	logOps.writeTabFileStr(str, 1, thisParentInfo)
 	logOps.writeFileStr(logOps.Banner6, thisParentInfo)
 
-	str = fmt.Sprintf("%v\n", job.CmdJobElapsedTime)
+	str = fmt.Sprintf("%v\n", job.CmdJobDuration.UTCTime.GetElapsedTimeStr())
 	logOps.writeTabFileStr(str, 2, thisParentInfo)
 	logOps.writeFileStr(logOps.Banner6 + "\n", thisParentInfo)
 

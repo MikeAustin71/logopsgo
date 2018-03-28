@@ -1,6 +1,7 @@
 package common
 
 import (
+	dt "MikeAustin71/datetimeopsgo/datetime"
 	"testing"
 	"time"
 )
@@ -13,13 +14,20 @@ func TestLogJobGroupConfig_New(t *testing.T) {
 	thisMethodName := "TestLogJobGroupConfig_New"
 	thisErrBlockNo := int64(80000)
 	lg.AppPathFileNameExt ,_ = FileMgr{}.New("../app/cmdrX.exe")
+	lg.AppDateTimeFormat = dt.FmtDateTimeYMDAbbrvDowNano
 	lg.CmdPathFileNameExt, _ = FileMgr{}.New("../app/cmdrXCmds.xml")
-	lg.AppStartTimeTzu, _ = TimeZoneUtility{}.New(time.Now().UTC(), "Local")
-	lg.BatchStartTimeTzu, _ = TimeZoneUtility{}.New(lg.AppStartTimeTzu.TimeUTC, "Local")
+	lg.AppStartTimeDto, _ =
+			dt.TimeZoneDto{}.New(time.Now().UTC(),
+							"Local", lg.AppDateTimeFormat)
+
+	lg.BatchStartTimeDto, _ =
+			dt.TimeZoneDto{}.New(lg.AppStartTimeDto.TimeUTC.DateTime,
+								"Local", lg.AppDateTimeFormat)
+
 	lg.AppVersion = "2.0.0"
 	lg.LogMode = LogVERBOSE
-	dt := DateTimeUtility{}
-	dateTimeStamp := dt.GetDateTimeStr(lg.AppStartTimeTzu.TimeOut)
+
+	dateTimeStamp := lg.AppStartTimeDto.TimeOut.GetDateTimeStr()
 	logFileNameExt :=  lg.AppPathFileNameExt.FileName + "_" + dateTimeStamp + ".log"
 	appErrFileNameExt := lg.AppPathFileNameExt.FileName + "_Errors_" + dateTimeStamp + ".txt"
 	logPath, _ := DirMgr{}.New( "./cmdrXLog")

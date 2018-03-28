@@ -25,13 +25,13 @@ type StartupParameters struct {
 	AppName                 string
 	AppPathFileNameExt      FileMgr
 	AppPath                 DirMgr
-	AppStartTimeTzu         TimeZoneUtility 	// Time Zone Utility Containing App StartUp time
+	AppStartTimeDto         TimeZoneUtility 	// Time Zone Utility Containing App StartUp time
 	AppErrPathFileNameExt		FileMgr
 	BaseStartDir            DirMgr
 	CurrentDirPath          DirMgr
 	CmdPathFileNameExt      FileMgr
 	CmdPath                 DirMgr
-	BatchStartTimeTzu       TimeZoneUtility
+	BatchStartTimeDto       TimeZoneUtility
 	BatchStartTimeUTC				time.Time
 	BatchStartTime					time.Time
 	IanaTimeZone						string

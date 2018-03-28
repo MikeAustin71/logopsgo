@@ -2,6 +2,7 @@ package main
 
 import (
 	"MikeAustin71/logopsgo/common"
+	dt "MikeAustin71/datetimeopsgo/datetime"
 	"fmt"
 	"time"
 )
@@ -32,13 +33,17 @@ func main() {
 
 	lg := common.LogJobGroup{}
 
-	om2 := assembleAppPathFiles(isRunningInDebugMode, &lg, om.GetNewParentHistory())
+	newParentHistory := om.GetNewParentHistory()
+
+	om2 := assembleAppPathFiles(isRunningInDebugMode, &lg, newParentHistory)
 
 	if om2.IsFatalError() {
 		om2.PrintToConsole()
 		return
 	}
 
+	defer lg.AppErrPathFileNameExt.CloseFile()
+	defer lg.LogPathFileNameExt.CloseFile()
 
 	su := common.StringUtility{}
 	lBanner1 := len(appBanner1)
@@ -49,19 +54,17 @@ func main() {
 	fmt.Println("Current Directory: ", lg.CurrentDirPath.AbsolutePath)
 	fmt.Println("Executable Directory: ", lg.AppPathFileNameExt.DMgr.AbsolutePath)
 
-	parentHistory := []common.OpsMsgContextInfo{parent}
 
-
-
-	cmds, om3 := startUp(&lg, parentHistory)
+	cmds, om3 := startUp(&lg, newParentHistory)
 
 	if om3.IsFatalError() {
-		panic(om3)
+		om3.PrintToConsole()
+		return
 	}
 
-	runCmdJobs(&lg, cmds, parentHistory)
+	runCmdJobs(&lg, cmds, newParentHistory)
 
-	doLogWrapUp(&lg, cmds, parentHistory)
+	doLogWrapUp(&lg, cmds, newParentHistory)
 }
 
 
@@ -82,12 +85,15 @@ func assembleAppPathFiles(isDebugMode bool, lg *common.LogJobGroup, parent []com
 	// Set Application Version
 	lg.AppVersion = applicationVersion
 
+	// Set Application Date Time Format
+	lg.AppDateTimeFormat = dt.FmtDateTimeYMDAbbrvDowNano
+
 	// Compute App Start Time
-	lg.AppStartTimeTzu, err = common.TimeZoneUtility{}.ConvertTz(time.Now().UTC(), "Local")
+	lg.AppStartTimeDto, err = dt.TimeZoneDto{}.ConvertTz(time.Now().UTC(), "Local", lg.AppDateTimeFormat)
 
 	if err != nil {
 		s:= fmt.Sprintf("TimeZoneUtility{}.ConvertTz Error - Failed to convert UTC to local Time Zone. Start UTC: %v. Time Zone 'Local': %v", time.Now().UTC(), "Local")
-		om.SetFatalError(s, err, 3701)
+		om.SetFatalError(s, err, 37001)
 		return om
 	}
 
@@ -97,7 +103,7 @@ func assembleAppPathFiles(isDebugMode bool, lg *common.LogJobGroup, parent []com
 
 		if err!=nil {
 			s:= fmt.Sprintf("DEBUG MODE-Error returned from DirMgr{}.New(debugAppPath) debugAppPath='%v'\n", debugAppPath)
-			om.SetFatalError(s, err, 3703)
+			om.SetFatalError(s, err, 37003)
 			return om
 		}
 
@@ -105,7 +111,7 @@ func assembleAppPathFiles(isDebugMode bool, lg *common.LogJobGroup, parent []com
 
 		if err!=nil {
 			s:= fmt.Sprintf("DEBUG MODE-Error returned from FileMgr{}.NewFromDirMgrFileNameExt(appPath, appName + \".exe\" ) (lg.AppPath.Path='%v' appFileNameExt='%v' \n", appPath.Path, debugAppName + ".exe")
-			om.SetFatalError(s, err, 3705)
+			om.SetFatalError(s, err, 37005)
 			return om
 		}
 
@@ -124,7 +130,7 @@ func assembleAppPathFiles(isDebugMode bool, lg *common.LogJobGroup, parent []com
 
 		if err!=nil {
 			s:= fmt.Sprintf("ACTUAL MODE- Error returned from FileMgr{}.New(appExePathFileNameStr) appExePathFileNameStr='%v'!\n", appExePathFileNameStr)
-			om.SetFatalError(s, err, 3709)
+			om.SetFatalError(s, err, 37009)
 			return om
 		}
 
@@ -134,37 +140,16 @@ func assembleAppPathFiles(isDebugMode bool, lg *common.LogJobGroup, parent []com
 
 	if err!=nil {
 		s:= fmt.Sprintf("Error: lg.AppPathFileNameExt is INVALID! lg.AppPathFileNameExt='%v' \n", lg.AppPathFileNameExt.AbsolutePathFileName)
-		om.SetFatalError(s, err, 3711)
+		om.SetFatalError(s, err, 37011)
 		return om
 	}
 
 	if !lg.AppPathFileNameExt.AbsolutePathFileNameDoesExist {
 		s:= "Error: lg.AppPathFileNameExt DOES NOT EXIST!  \n"
-		om.SetFatalError(s, fmt.Errorf("File Does NOT Exist! lg.AppPathFileNameExt='%v'\n", lg.AppPathFileNameExt.AbsolutePathFileName), 3715)
+		om.SetFatalError(s, fmt.Errorf("File Does NOT Exist! lg.AppPathFileNameExt='%v'\n", lg.AppPathFileNameExt.AbsolutePathFileName), 37015)
 		return om
 	}
 
-	// Command Path
-
-	cmdPath := lg.AppPathFileNameExt.DMgr.CopyOut()
-	cmdFileNameExt := lg.AppPathFileNameExt.FileName + "Cmds.xml"
-	
-	// Command Path File Name Ext
-	lg.CmdPathFileNameExt, err = common.FileMgr{}.NewFromDirMgrFileNameExt(cmdPath,cmdFileNameExt)
-
-	if err!=nil {
-		s:= fmt.Sprintf("Error returned by FileMgr{}.NewFromDirMgrFileNameExt(cmdPath,cmdPathFileName ) cmdPath.Path='%v' cmdPathFileName='%v'\n", cmdPath.Path, cmdFileNameExt)
-		om.SetFatalError(s, err, 3717)
-		return om
-	}
-
-	if !lg.CmdPathFileNameExt.AbsolutePathFileNameDoesExist {
-		s:= "Error: XML Commands File Does NOT EXIST!"		
-		err = fmt.Errorf("XML Command File DOES NOT EXIST! CmdPathFileNameExt='%v'", lg.CmdPathFileNameExt.AbsolutePathFileName)
-		om.SetFatalError(s, err, 3719)
-		return om
-	}
-	
 	// Log Path
 	appLogDirectory := lg.AppPathFileNameExt.FileName + "Log"
 	logPath := lg.AppPathFileNameExt.DMgr.GetPathWithSeparator() + appLogDirectory
@@ -173,21 +158,24 @@ func assembleAppPathFiles(isDebugMode bool, lg *common.LogJobGroup, parent []com
 
 	if err!=nil {
 		s:= fmt.Sprintf("Error returned by DirMgr{}.New(logPath) logPath='%v'\n", logPath)
-		om.SetFatalError(s, err, 3721)
+		om.SetFatalError(s, err, 37017)
 		return om
 	}
 
+	dateTimeStamp := lg.AppStartTimeDto.TimeLocal.GetDateTimeStr()
+
 	// Log Path File Name Ext
-	dt := common.DateTimeUtility{}
-	dateTimeStamp := dt.GetDateTimeStr(lg.AppStartTimeTzu.TimeOut)
-	logFileNameExt :=  lg.AppPathFileNameExt.FileName + "_" + dateTimeStamp + ".log"
+	logFileNameExt :=  lg.AppPathFileNameExt.FileName + "_" +
+												dateTimeStamp + ".log"
+
 	lg.LogPathFileNameExt, err = common.FileMgr{}.NewFromDirMgrFileNameExt(logPathDMgr, logFileNameExt)
 
 	if err != nil {
 		s:= fmt.Sprintf("lg.LogPathFileNameExt Error returned from FileMgr{}.NewFromDirMgrFileNameExt(logPathDMgr, logFileNameExt) logPathDMgr.Path='%v' logFileNameExt='%v' \n", logPathDMgr.Path, logFileNameExt)
-		om.SetFatalError(s, err, 3725)
+		om.SetFatalError(s, err, 37019)
 		return om
 	}
+
 
 	// App Error Path File Name Ext
 	appErrFileNameExt := lg.AppPathFileNameExt.FileName + "_Errors_" + dateTimeStamp + ".txt"
@@ -196,15 +184,39 @@ func assembleAppPathFiles(isDebugMode bool, lg *common.LogJobGroup, parent []com
 
 	if err != nil {
 		s:= fmt.Sprintf("lg.AppErrPathFileNameExt - Error returned from FileMgr{}.NewFromDirMgrFileNameExt(lg.LogPathFileNameExt.DMgr,appErrFileNameExt) lg.LogPath.Path='%v' appErrFileNameExt='%v' \n", lg.LogPathFileNameExt.DMgr, appErrFileNameExt)
-		om.SetFatalError(s, err, 3727)
+		om.SetFatalError(s, err, 3721)
 		return om
 	}
+
+	// Command Path
+	cmdPath := lg.AppPathFileNameExt.DMgr.CopyOut()
+	cmdFileNameExt := lg.AppPathFileNameExt.FileName + "Cmds.xml"
+
+	// Command Path File Name Ext
+	lg.CmdPathFileNameExt, err = common.FileMgr{}.NewFromDirMgrFileNameExt(cmdPath,cmdFileNameExt)
+
+	if err!=nil {
+		s:= fmt.Sprintf("Error returned by FileMgr{}.NewFromDirMgrFileNameExt(cmdPath,cmdPathFileName ) cmdPath.Path='%v' cmdPathFileName='%v'\n", cmdPath.Path, cmdFileNameExt)
+		om.SetFatalError(s, err, 3723)
+		lg.AppErrPathFileNameExt.WriteStrToFile(om.Error())
+		return om
+	}
+
+	if !lg.CmdPathFileNameExt.AbsolutePathFileNameDoesExist {
+		s:= "Error: XML Commands File Does NOT EXIST!"
+		err = fmt.Errorf("XML Command File DOES NOT EXIST! CmdPathFileNameExt='%v'", lg.CmdPathFileNameExt.AbsolutePathFileName)
+		om.SetFatalError(s, err, 3725)
+		lg.AppErrPathFileNameExt.WriteStrToFile(om.Error())
+		return om
+	}
+
 
 	// Set Current Directory Path
 	currDirPath, err := fh.GetCurrentDir()
 
 	if err!=nil {
-		om.SetFatalError("fh.GetCurrentDir() FAILED!\n", err, 3731)
+		om.SetFatalError("fh.GetCurrentDir() FAILED!\n", err, 3727)
+		lg.AppErrPathFileNameExt.WriteStrToFile(om.Error())
 		return om
 	}
 
@@ -212,7 +224,8 @@ func assembleAppPathFiles(isDebugMode bool, lg *common.LogJobGroup, parent []com
 
 	if err!=nil {
 		s := fmt.Sprintf("Error returned by DirMgr{}.New(currDirPath). currDirPath='%v'\n",currDirPath)
-		om.SetFatalError(s, err,3733)
+		lg.AppErrPathFileNameExt.WriteStrToFile(om.Error())
+		om.SetFatalError(s, err,3729)
 		return om
 	}
 
@@ -231,10 +244,11 @@ func doLogWrapUp(lg *common.LogJobGroup, cmds common.CommandBatch, parent []comm
 
 	om1 := common.OpsMsgDto{}.InitializeAllContextInfo(parent, msgCtx)
 
-	defer lg.LogPathFileNameExt.CloseFile()
+
+	newParentHistory := om1.GetNewParentHistory()
 
 	// Closes lg.LogFilePtr
-	om2 := lg.WriteJobGroupFooterToLog(cmds, om1.GetNewParentHistory())
+	om2 := lg.WriteJobGroupFooterToLog(cmds, newParentHistory)
 
 	if om2.IsFatalError(){
 		om2.PrintToConsole()
@@ -253,28 +267,28 @@ func doLogWrapUp(lg *common.LogJobGroup, cmds common.CommandBatch, parent []comm
 func startUp(lg *common.LogJobGroup, parent []common.OpsMsgContextInfo) (common.CommandBatch, common.OpsMsgDto) {
 
 	om := baseLogMsgConfigMain(parent, "startUp")
-	parentHistory := om.GetNewParentHistory()
+	newParentHistory := om.GetNewParentHistory()
 
 
-	cmds, om5 := common.ParseXML(lg.CmdPathFileNameExt, parentHistory)
+	cmds, om5 := common.ParseXML(lg.CmdPathFileNameExt, newParentHistory)
 
 	if om5.IsFatalError() {
 		panic(om5)
 	}
 
-	om6 := cmds.FormatCmdParameters(parentHistory)
+	om6 := cmds.FormatCmdParameters(newParentHistory)
 
 	if om6.IsFatalError() {
 		panic(om6)
 	}
 
 
-	om7 := cmds.SetBatchStartTime(lg.AppStartTimeTzu, parentHistory)
+	om7 := cmds.SetBatchStartTime(lg.AppStartTimeDto, newParentHistory)
 	if om7.IsFatalError() {
 		return cmds, om7
 	}
 
-	tzxu := common.TimeZoneUtility{}
+	tzxu := dt.TimeZoneDto{}
 
 	isValidTz, _, _ := tzxu.IsValidTimeZone(cmds.CmdJobsHdr.IanaTimeZone)
 
@@ -286,35 +300,26 @@ func startUp(lg *common.LogJobGroup, parent []common.OpsMsgContextInfo) (common.
 	lg.KillAllJobsOnFirstError = cmds.CmdJobsHdr.KillAllJobsOnFirstError
 	lg.LogFileRetentionInDays = cmds.CmdJobsHdr.LogFileRetentionInDays
 
+	lg.BatchStartTimeDto = cmds.CmdJobsHdr.CmdBatchStartTime.CopyOut()
 
-	var err error
-
-	lg.BatchStartTimeTzu, err = common.TimeZoneUtility{}.New(cmds.CmdJobsHdr.CmdBatchStartUTC, lg.IanaTimeZone)
-
-	if err != nil {
-
-		om.SetFatalError("Error from TimeZoneUtility{}.New(cmds.CmdJobsHdr.CmdBatchStartUTC, lg.IanaTimeZone)\n", err, 4701)
-		return cmds, om
-	}
-
-	dtf := common.DateTimeFormatUtility{}
+	dtf := dt.FormatDateTimeUtility{}
 	dtf.CreateAllFormatsInMemory()
 	lg.LogMode = common.LogVERBOSE
 	lg.BaseStartDir = lg.AppPathFileNameExt.DMgr.CopyOut()
 	lg.NoOfJobs = cmds.CmdJobsHdr.NoOfCmdJobs
 	lg.Dtfmt = &dtf
 
-	om8 := lg.New(parentHistory)
+	om8 := lg.New(newParentHistory)
 
 	if om8.IsFatalError() {
 		panic(om8)
 	}
 
-	dur := common.DurationUtility{}
+	dur := dt.TimeDurationDto{}.GetDurationFromSeconds(10)
 
-	time.Sleep(dur.GetDurationFromSeconds(10))
+	time.Sleep(dur)
 
-	om9 := cmds.SetBatchEndTime(parentHistory)
+	om9 := cmds.SetBatchEndTime(newParentHistory)
 
 	if om9.IsFatalError() {
 		panic(om9)
