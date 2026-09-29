@@ -1,2 +1,2 @@
 # logopsgo
-a loging application written in golang.
+a logging application written in golang.
